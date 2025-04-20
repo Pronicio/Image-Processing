@@ -153,3 +153,45 @@ void bmp8_printInfo(t_bmp8 *img) {
     printf("Color Depth: %u\n", img->colorDepth);
     printf("Data Size: %u\n", img->dataSize);
 }
+
+// Modify the luminance of a BMP8 image
+void bmp8_brightness(const t_bmp8 *img, int value) {
+    if (img == NULL || img->data == NULL) {
+        fprintf(stderr, "Cannot adjust brightness for NULL image\n");
+        return;
+    }
+
+    // Iterate through each pixel in the image data
+    for (unsigned int i = 0; i < img->dataSize; i++) {
+        // Calculate the new pixel value
+        int newPixelValue = img->data[i] + value;
+
+        // Ensure the value is within the valid range [0, 255]
+        if (newPixelValue > 255) {
+            newPixelValue = 255;
+        } else if (newPixelValue < 0) {
+            newPixelValue = 0;
+        }
+
+        // Assign the new pixel value
+        img->data[i] = (unsigned char) newPixelValue;
+    }
+}
+
+// Transform a BMP8 image to its negative
+void bmp8_threshold(t_bmp8 *img, int threshold) {
+    if (img == NULL || img->data == NULL) {
+        fprintf(stderr, "Cannot apply threshold to NULL image\n");
+        return;
+    }
+
+    // Iterate through each pixel in the image data
+    for (unsigned int i = 0; i < img->dataSize; i++) {
+        // Apply the threshold
+        if (img->data[i] >= threshold) {
+            img->data[i] = 255; // White if value >= threshold
+        } else {
+            img->data[i] = 0; // Black if value < threshold
+        }
+    }
+}
