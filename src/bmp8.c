@@ -154,6 +154,20 @@ void bmp8_printInfo(t_bmp8 *img) {
     printf("Data Size: %u\n", img->dataSize);
 }
 
+// Apply a negative effect to a BMP8 image
+void bmp8_negative(t_bmp8 *img) {
+    if (img == NULL || img->data == NULL) {
+        fprintf(stderr, "Cannot apply negative effect to NULL image\n");
+        return;
+    }
+
+    // Iterate through each pixel in the image data
+    for (unsigned int i = 0; i < img->dataSize; i++) {
+        // Invert pixel value (255 - value)
+        img->data[i] = 255 - img->data[i];
+    }
+}
+
 // Modify the luminance of a BMP8 image
 void bmp8_brightness(const t_bmp8 *img, int value) {
     if (img == NULL || img->data == NULL) {
