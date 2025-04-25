@@ -3,6 +3,8 @@
 
 #include "bmp8.h"
 
+#include <string.h>
+
 // Load a BMP8 image from a file
 // Source : https://koor.fr/C/cstdio/fread.wp
 t_bmp8 *bmp8_loadImage(const char *filename) {
@@ -208,4 +210,71 @@ void bmp8_threshold(t_bmp8 *img, int threshold) {
             img->data[i] = 0; // Black if value < threshold
         }
     }
+}
+
+// Apply a filter to a BMP8 image using a kernel
+void bmp8_applyFilter(t_bmp8 *img, float **kernel, int kernelSize) {
+    if (img == NULL || img->data == NULL || kernel == NULL) {
+        fprintf(stderr, "Cannot apply filter to NULL image or with NULL kernel\n");
+        return;
+    }
+
+    // Verify the kernel size
+    if (kernelSize % 2 == 0) {
+        fprintf(stderr, "Kernel size must be odd\n");
+        return;
+    }
+
+    // Calculate the half size of the kernel
+    int n = kernelSize / 2;
+
+    // Create a copy of the image data to avoid modifying the original during convolution
+    unsigned char *dataCopy = (unsigned char *)malloc(img->dataSize * sizeof(unsigned char));
+    if (dataCopy == NULL) {
+        fprintf(stderr, "Memory allocation error for image data copy\n");
+        return;
+    }
+    memcpy(dataCopy, img->data, img->dataSize * sizeof(unsigned char));
+
+    // Iterate through each pixel in the image data
+    for (unsigned int y = n; y < img->height - n; y++) {
+        for (unsigned int x = n; x < img->width - n; x++) {
+            // Calculate the index of the pixel in the image data
+            unsigned int index = y * img->width + x;
+
+            // Apply the kernel to the pixel
+            float sum = 0.0f;
+            for (int i = -n; i <= n; i++) {
+                for (int j = -n; j <= n; j++) {
+                    // Calculate the coordinates of the neighbor pixel
+                    unsigned int neighborX = x - j;
+                    unsigned int neighborY = y - i;
+                    unsigned int neighborIndex = neighborY * img->width + neighborX;
+
+                    // Get the value of the neighbor pixel
+                    unsigned char neighborValue = dataCopy[neighborIndex];
+
+                    // Map the kernel coordinates to the kernel array
+                    int kernel_i = i + n;
+                    int kernel_j = j + n;
+
+                    // Apply the kernel value to the neighbor pixel value
+                    sum += neighborValue * kernel[kernel_i][kernel_j];
+                }
+            }
+
+            // Validate the sum to ensure it stays within the range [0, 255]
+            if (sum > 255.0f) {
+                sum = 255.0f;
+            } else if (sum < 0.0f) {
+                sum = 0.0f;
+            }
+
+            // Define the new pixel value
+            img->data[index] = (unsigned char)sum;
+        }
+    }
+
+    // Free the copy of the image data
+    free(dataCopy);
 }
