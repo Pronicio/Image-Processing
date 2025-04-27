@@ -1,8 +1,6 @@
+#include "bmp8.h"
 #include <stdio.h>
 #include <stdlib.h>
-
-#include "bmp8.h"
-
 #include <string.h>
 
 // Load a BMP8 image from a file
@@ -16,7 +14,7 @@ t_bmp8 *bmp8_loadImage(const char *filename) {
     }
 
     // Allocate memory for the image
-    t_bmp8 *img = malloc(sizeof(t_bmp8));
+    t_bmp8 *img = calloc(1, sizeof *img);
     if (img == NULL) {
         fprintf(stderr, "Memory allocation error\n");
         fclose(file);
@@ -24,7 +22,7 @@ t_bmp8 *bmp8_loadImage(const char *filename) {
     }
 
     // Read the header (54 bytes)
-    if (fread(img->header, sizeof(unsigned char), 54, file) != 54) {
+    if (fread(img->header, 1, 54, file) != 54) {
         fprintf(stderr, "Error reading header\n");
         free(img);
         fclose(file);
@@ -98,47 +96,17 @@ void bmp8_saveImage(const char *filename, t_bmp8 *img) {
         return;
     }
 
-    // Write the header (54 bytes)
-    if (fwrite(img->header, sizeof(unsigned char), 54, file) != 54) {
-        fprintf(stderr, "Error writing header\n");
-        fclose(file);
-        return;
-    }
-
-    // Write the color table (256 colors × 4 bytes = 1024 bytes)
-    if (fwrite(img->colorTable, sizeof(unsigned char), 1024, file) != 1024) {
-        fprintf(stderr, "Error writing color table\n");
-        fclose(file);
-        return;
-    }
-
-    // Write the image data
-    if (fwrite(img->data, sizeof(unsigned char), img->dataSize, file) != img->dataSize) {
-        fprintf(stderr, "Error writing image data\n");
-        fclose(file);
-        return;
-    }
-
-    // Close the file
-    if (fclose(file) == EOF) {
-        fprintf(stderr, "Cannot close file: %s\n", filename);
-    }
+    fwrite(img->header, 1, 54, file);
+    fwrite(img->colorTable, 1, 1024, file);
+    fwrite(img->data, 1, img->dataSize, file);
+    fclose(file);
 }
 
 // Free the memory allocated for a BMP8 image
 // Source : https://koor.fr/C/cstdlib/free.wp
 void bmp8_free(t_bmp8 *img) {
-    if (img == NULL) {
-        return; // Nothing to free
-    }
-
-    // Free the image data if it exists
-    if (img->data != NULL) {
-        free(img->data);
-        img->data = NULL;
-    }
-
-    // Free the image structure itself
+    if (img == NULL) { return; }
+    free(img->data);
     free(img);
 }
 
@@ -164,7 +132,7 @@ void bmp8_negative(t_bmp8 *img) {
     }
 
     // Iterate through each pixel in the image data
-    for (unsigned int i = 0; i < img->dataSize; i++) {
+    for (unsigned int i = 0; i < img->dataSize; ++i) {
         // Invert pixel value (255 - value)
         img->data[i] = 255 - img->data[i];
     }
@@ -178,7 +146,7 @@ void bmp8_brightness(const t_bmp8 *img, int value) {
     }
 
     // Iterate through each pixel in the image data
-    for (unsigned int i = 0; i < img->dataSize; i++) {
+    for (unsigned int i = 0; i < img->dataSize; ++i) {
         // Calculate the new pixel value
         int newPixelValue = img->data[i] + value;
 
@@ -202,7 +170,7 @@ void bmp8_threshold(t_bmp8 *img, int threshold) {
     }
 
     // Iterate through each pixel in the image data
-    for (unsigned int i = 0; i < img->dataSize; i++) {
+    for (unsigned int i = 0; i < img->dataSize; ++i) {
         // Apply the threshold
         if (img->data[i] >= threshold) {
             img->data[i] = 255; // White if value >= threshold
@@ -229,7 +197,7 @@ void bmp8_applyFilter(t_bmp8 *img, float **kernel, int kernelSize) {
     int n = kernelSize / 2;
 
     // Create a copy of the image data to avoid modifying the original during convolution
-    unsigned char *dataCopy = (unsigned char *)malloc(img->dataSize * sizeof(unsigned char));
+    unsigned char *dataCopy = (unsigned char *) malloc(img->dataSize * sizeof(unsigned char));
     if (dataCopy == NULL) {
         fprintf(stderr, "Memory allocation error for image data copy\n");
         return;
@@ -271,7 +239,7 @@ void bmp8_applyFilter(t_bmp8 *img, float **kernel, int kernelSize) {
             }
 
             // Define the new pixel value
-            img->data[index] = (unsigned char)sum;
+            img->data[index] = (unsigned char) sum;
         }
     }
 
