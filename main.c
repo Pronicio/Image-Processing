@@ -1,67 +1,102 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "./src/bmp8.h"
 #include "./src/bmp24.h"
 
 int main(void) {
-    // Loading an 8-bit BMP image
-    t_bmp8 *img = bmp8_loadImage("../images/lena_gray.bmp");
+    t_bmp8 *img = NULL;
+    int choice;
 
-    bmp8_printInfo(img);
+    while (1) {
+        printf("Please select an option: \n");
+        printf("1. Open image \n2. Save image \n3. Apply filter \n4. Display image information \n5. Exit\n");
+        printf(">>> Your choice: ");
 
-    bmp8_negative(img);
-    bmp8_saveImage("../images/lena_gray_negative.bmp", img);
+        scanf("%d", &choice);
 
-    bmp8_brightness(img, 50);
-    bmp8_saveImage("../images/lena_gray_brightness.bmp", img);
+        switch (choice) {
+            case 1: {
+                char filename[256];
+                printf("Enter the filename to open (in ./images/...): ");
+                scanf("%s", filename);
 
-    bmp8_threshold(img, 128);
-    bmp8_saveImage("../images/lena_gray_threshold.bmp", img);
+                img = bmp8_loadImage(filename);
+                if (img != NULL) {
+                    printf("Image loaded successfully!\n");
+                } else {
+                    break;
+                }
+                break;
+            }
+            case 2: {
+                char filename[256];
+                printf("Enter the filename to save (in ./images/...): ");
+                scanf("%s", filename);
 
-    bmp8_free(img);
-    
-    // Loading a 24-bit BMP image
-    printf("Loading the image...\n");
-    t_bmp24 *img24 = bmp24_loadImage("../images/lena_color.bmp");
-    if (img24 == NULL) {
-        fprintf(stderr, "Error while loading the image\n");
-        return 1;
+                bmp8_saveImage(filename, img);
+                printf("Image saved successfully!\n");
+                break;
+            }
+            case 3: {
+                int filter;
+                printf("Please select a filter: \n");
+                printf("1. Negative \n2. Brightness \n3. Threshold \n");
+                printf(">>> Your choice: ");
+                scanf("%d", &filter);
+
+                switch (filter) {
+                    case 1: {
+                        bmp8_negative(img);
+                        printf("Negative filter applied!\n");
+                        break;
+                    }
+                    case 2: {
+                        bmp8_brightness(img, 50);
+                        printf("Grayscale filter applied!\n");
+                        break;
+                    }
+                    case 3: {
+                        bmp8_threshold(img, 128);
+                        printf("Threshold filter applied!\n");
+                        break;
+                    }
+                    default: {
+                        printf("Invalid filter choice.\n");
+                        break;
+                    }
+                }
+
+                break;
+            }
+            case 4: {
+                char filename[256];
+                printf("Enter the filename to display information: ");
+                scanf("%s", filename);
+
+                t_bmp8 *temp = bmp8_loadImage(filename);
+                if (img != NULL) {
+                    printf("Image loaded successfully!\n");
+                } else {
+                    break;
+                }
+
+                printf("------ Image Information ---\n");
+                bmp8_printInfo(img);
+                printf("----------------------------\n");
+
+                bmp8_free(temp);
+                break;
+            }
+            case 5: {
+                printf("Exiting...\n");
+                return 0;
+            }
+            default: {
+                printf("Invalid choice. Please retry.\n");
+                break;
+            }
+        }
     }
-
-    printf("Image loaded successfully:\n");
-    printf("Width: %d, Height: %d, Depth: %d bits\n", img24->width, img24->height, img24->colorDepth);
-
-    // Testing the brightness function
-    printf("Testing the brightness function...\n");
-    t_bmp24 *img_bright = bmp24_loadImage("../images/lena_color.bmp");
-    bmp24_brightness(img_bright, 50);
-    bmp24_saveImage(img_bright, "../images/lena_color_brightness.bmp");
-    bmp24_free(img_bright);
-    
-    // Testing the grayscale conversion function
-    printf("Converting to grayscale...\n");
-    t_bmp24 *img_gray = bmp24_loadImage("../images/lena_color.bmp");
-    bmp24_grayscale(img_gray);
-    bmp24_saveImage(img_gray, "../images/lena_color_grayscale.bmp");
-    bmp24_free(img_gray);
-
-    // Testing the negative function
-    printf("Creating negative...\n");
-    t_bmp24 *img_neg = bmp24_loadImage("../images/lena_color.bmp");
-    bmp24_negative(img_neg);
-    bmp24_saveImage(img_neg, "../images/lena_color_negative.bmp");
-    bmp24_free(img_neg);
-
-    // Combined test: grayscale + brightness
-    printf("Combined test: grayscale + brightness...\n");
-    t_bmp24 *img_combo = bmp24_loadImage("../images/lena_color.bmp");
-    bmp24_grayscale(img_combo);
-    bmp24_brightness(img_combo, -30); // Changing brightness after grayscale conversion
-    bmp24_saveImage(img_combo, "../images/lena_color_gray_dark.bmp");
-    bmp24_free(img_combo);
-
-    // Freeing the original image
-    bmp24_free(img24);
-
-    return 0;
 }

@@ -6,7 +6,11 @@
 // Load a BMP8 image from a file
 // Source : https://koor.fr/C/cstdio/fread.wp
 t_bmp8 *bmp8_loadImage(const char *filename) {
-    FILE *file = fopen(filename, "rb"); // Open in binary read mode
+    char path[512];
+    strcpy(path, "../images/");
+    strcat(path, filename);
+
+    FILE *file = fopen(path, "rb"); // Open in binary read mode
 
     if (file == NULL) {
         fprintf(stderr, "File not found\n");
@@ -14,7 +18,7 @@ t_bmp8 *bmp8_loadImage(const char *filename) {
     }
 
     // Allocate memory for the image
-    t_bmp8 *img = calloc(1, sizeof *img);
+    t_bmp8 *img = (t_bmp8 *) malloc(sizeof(t_bmp8));
     if (img == NULL) {
         fprintf(stderr, "Memory allocation error\n");
         fclose(file);
@@ -52,6 +56,15 @@ t_bmp8 *bmp8_loadImage(const char *filename) {
         return NULL;
     }
 
+    if (fread(img->colorTable, sizeof(unsigned char), 1024, file) != 1024) {
+        fprintf(stderr, "Error reading color table\n");
+        free(img->colorTable);
+        free(img->header);
+        free(img);
+        fclose(file);
+        return NULL;
+    }
+
     // Read the image data
     img->data = (unsigned char *) malloc(img->dataSize * sizeof(unsigned char));
     if (img->data == NULL) {
@@ -70,8 +83,7 @@ t_bmp8 *bmp8_loadImage(const char *filename) {
     }
 
     // Close the file
-    if (fclose(file) == EOF) {
-        // EOF is a macro that represents the end-of-file
+    if (fclose(file) == EOF) { // EOF is a macro that represents the end-of-file
         fprintf(stderr, "Cannot close file\n");
         free(img->data);
         free(img);
@@ -89,7 +101,11 @@ void bmp8_saveImage(const char *filename, t_bmp8 *img) {
         return;
     }
 
-    FILE *file = fopen(filename, "wb"); // Open in binary write mode
+    char path[512];
+    strcpy(path, "../images/");
+    strcat(path, filename);
+
+    FILE *file = fopen(path, "wb"); // Open in binary write mode
 
     if (file == NULL) {
         fprintf(stderr, "Cannot create file: %s\n", filename);
