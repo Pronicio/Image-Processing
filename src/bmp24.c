@@ -1,5 +1,5 @@
 #include "bmp24.h"
-
+#include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -28,16 +28,14 @@ t_pixel **bmp24_allocateDataPixels(int width, int height) {
     return pixels;
 }
 
+// Libération de la matrice de pixels
 void bmp24_freeDataPixels(t_pixel **pixels, int height) {
-    if (pixels == NULL) return;
-
-    // Free each row
-    for (int i = 0; i < height; i++) {
-        free(pixels[i]);
+    if (pixels) {
+        for (int i = 0; i < height; i++) {
+            free(pixels[i]);
+        }
+        free(pixels);
     }
-
-    // Free the array of pointers
-    free(pixels);
 }
 
 t_bmp24 *bmp24_allocate(int width, int height, int colorDepth) {
@@ -48,29 +46,25 @@ t_bmp24 *bmp24_allocate(int width, int height, int colorDepth) {
         return NULL;
     }
 
-    // Allocate the pixel matrix
-    img->data = bmp24_allocateDataPixels(width, height);
-    if (img->data == NULL) {
-        free(img);
-        return NULL;
-    }
-
     // Initialize image fields
     img->width = width;
     img->height = height;
     img->colorDepth = colorDepth;
-
+    img->data = bmp24_allocateDataPixels(width, height);
+    
+    if (!img->data) {
+        free(img);
+        return NULL;
+    }
     return img;
 }
 
+// Libération de l'image
 void bmp24_free(t_bmp24 *img) {
-    if (img == NULL) return;
-
-    // Free pixels
-    bmp24_freeDataPixels(img->data, img->height);
-
-    // Free the structure itself
-    free(img);
+    if (img) {
+        bmp24_freeDataPixels(img->data, img->height);
+        free(img);
+    }
 }
 
 void file_rawRead(uint32_t position, void *buffer, uint32_t size, size_t n, FILE *file) {
@@ -83,158 +77,156 @@ void file_rawWrite(uint32_t position, void *buffer, uint32_t size, size_t n, FIL
     fwrite(buffer, size, n, file);
 }
 
-void bmp24_readPixelValue(t_bmp24 *image, int x, int y, FILE *file) {
-    uint8_t blue, green, red;
-    fread(&blue, sizeof(uint8_t), 1, file);
-    fread(&green, sizeof(uint8_t), 1, file);
-    fread(&red, sizeof(uint8_t), 1, file);
 
-    image->data[y][x].blue = blue;
-    image->data[y][x].green = green;
-    image->data[y][x].red = red;
-}
-
-void bmp24_writePixelValue(t_bmp24 *image, int x, int y, FILE *file) {
-    fputc(image->data[y][x].blue, file);
-    fputc(image->data[y][x].green, file);
-    fputc(image->data[y][x].red, file);
-}
-
-void bmp24_readPixelData(t_bmp24 *image, FILE *file) {
-    if (!image || !file) return;
-
-    // Calculate padding for each line
-    int padding = (4 - ((image->width * 3) % 4)) % 4;
-
-    fseek(file, image->header.offset, SEEK_SET);
-
-    for (int y = image->height - 1; y >= 0; y--) {
-        for (int x = 0; x < image->width; x++) {
-            bmp24_readPixelValue(image, x, y, file);
+void bmp24_readPixelData(t_bmp24 *img, FILE *file) {
+    int offset = img->header.offset;
+    fseek(file, offset, SEEK_SET);
+    int rowSize = ((img->width * 3 + 3) / 4) * 4;
+    int padding = rowSize - (img->width * 3);
+    
+    for (int i = img->height - 1; i >= 0; i--) {
+        for (int j = 0; j < img->width; j++) {
+            uint8_t bgr[3];
+            fread(bgr, sizeof(uint8_t), 3, file);
+            img->data[i][j].blue = bgr[0];
+            img->data[i][j].green = bgr[1];
+            img->data[i][j].red = bgr[2];
         }
-
-        // Skip padding bytes at the end of each line
+        // Ignorer le padding en fin de ligne
         fseek(file, padding, SEEK_CUR);
     }
 }
-
-void bmp24_writePixelData(t_bmp24 *image, FILE *file) {
-    if (!image || !file) return;
-
-    // Calculate necessary padding for each line
-    int padding = (4 - ((image->width * 3) % 4)) % 4;
-
-    fseek(file, image->header.offset, SEEK_SET);
-
-    for (int y = image->height - 1; y >= 0; y--) {
-        for (int x = 0; x < image->width; x++) {
-            bmp24_writePixelValue(image, x, y, file);
+void bmp24_writePixelData(t_bmp24 *img, FILE *file) {
+    int offset = img->header.offset;
+    fseek(file, offset, SEEK_SET);
+     int rowSize = ((img->width * 3 + 3) / 4) * 4;
+    int padding = rowSize - (img->width * 3);
+    uint8_t pad[3] = {0, 0, 0}; // max 3 octets de padding
+    
+    for (int i = img->height - 1; i >= 0; i--) {
+        for (int j = 0; j < img->width; j++) {
+            uint8_t bgr[3] = {
+                img->data[i][j].blue,
+                img->data[i][j].green,
+                img->data[i][j].red
+            };
+            fwrite(bgr, sizeof(uint8_t), 3, file);
         }
-
-        // Write padding bytes at the end of each line
-        for (int p = 0; p < padding; p++) {
-            fputc(0, file);
-        }
+        // Écrire le padding à la fin de la ligne
+        fwrite(pad, sizeof(uint8_t), padding, file);
     }
 }
 
 t_bmp24 *bmp24_loadImage(const char *filename) {
     FILE *file = fopen(filename, "rb");
     if (!file) {
-        fprintf(stderr, "Error: unable to open file %s\n", filename);
+        fprintf(stderr, "Erreur : impossible d'ouvrir le fichier %s.\n", filename);
         return NULL;
     }
 
-    int32_t width, height;
-    uint16_t colorDepth;
+    t_bmp_header header;
+    t_bmp_info header_info;
 
-    file_rawRead(BITMAP_WIDTH, &width, sizeof(int32_t), 1, file);
-    file_rawRead(BITMAP_HEIGHT, &height, sizeof(int32_t), 1, file);
-    file_rawRead(BITMAP_DEPTH, &colorDepth, sizeof(uint16_t), 1, file);
+    fread(&header, sizeof(t_bmp_header), 1, file);
+    fread(&header_info, sizeof(t_bmp_info), 1, file);
 
-    if (colorDepth != DEFAULT_DEPTH) {
-        fprintf(stderr, "Error: this is not a 24-bit image (depth: %d)\n", colorDepth);
+    if (header.type != BMP_TYPE || header_info.bits != 24) {
+        fprintf(stderr, "Erreur : le fichier n'est pas une image BMP 24 bits.\n");
         fclose(file);
         return NULL;
     }
 
-    t_bmp24 *img = bmp24_allocate(width, height, colorDepth);
-    if (img == NULL) {
+    t_bmp24 *img = bmp24_allocate(header_info.width, header_info.height, header_info.bits);
+    if (!img) {
         fclose(file);
         return NULL;
     }
 
-    file_rawRead(BITMAP_MAGIC, &img->header, sizeof(t_bmp_header), 1, file);
-    file_rawRead(BITMAP_SIZE, &img->header_info, sizeof(t_bmp_info), 1, file);
+    img->header = header;
+    img->header_info = header_info;
 
     bmp24_readPixelData(img, file);
 
     fclose(file);
-
     return img;
 }
 
-void bmp24_saveImage(t_bmp24 *image, const char *filename) {
+void bmp24_saveImage(t_bmp24 *img, const char *filename) {
     FILE *file = fopen(filename, "wb");
     if (!file) {
-        fprintf(stderr, "Error: unable to open file %s\n", filename);
+        fprintf(stderr, "Erreur : impossible d'ouvrir le fichier %s en écriture.\n", filename);
         return;
     }
 
-    file_rawWrite(BITMAP_MAGIC, &image->header, sizeof(t_bmp_header), 1, file);
-    file_rawWrite(BITMAP_SIZE, &image->header_info, sizeof(t_bmp_info), 1, file);
+    fwrite(&img->header, sizeof(t_bmp_header), 1, file);
+    fwrite(&img->header_info, sizeof(t_bmp_info), 1, file);
 
-    bmp24_writePixelData(image, file);
-
+    bmp24_writePixelData(img, file);
     fclose(file);
 }
-
 void bmp24_negative(t_bmp24 *img) {
-    for (int y = 0; y < img->height; y++) {
-        for (int x = 0; x < img->width; x++) {
-            img->data[y][x].red = 255 - img->data[y][x].red;
-            img->data[y][x].green = 255 - img->data[y][x].green;
-            img->data[y][x].blue = 255 - img->data[y][x].blue;
+    for (int i = 0; i < img->height; i++) {
+        for (int j = 0; j < img->width; j++) {
+            img->data[i][j].red = 255 - img->data[i][j].red;
+            img->data[i][j].green = 255 - img->data[i][j].green;
+            img->data[i][j].blue = 255 - img->data[i][j].blue;
         }
     }
 }
 
 void bmp24_grayscale(t_bmp24 *img) {
-    for (int y = 0; y < img->height; y++) {
-        for (int x = 0; x < img->width; x++) {
-            uint8_t red = img->data[y][x].red;
-            uint8_t green = img->data[y][x].green;
-            uint8_t blue = img->data[y][x].blue;
-
-            uint8_t gray = (red + green + blue) / 3;
-
-            img->data[y][x].red = gray;
-            img->data[y][x].green = gray;
-            img->data[y][x].blue = gray;
+    for (int i = 0; i < img->height; i++) {
+        for (int j = 0; j < img->width; j++) {
+            uint8_t gray = (img->data[i][j].red + img->data[i][j].green + img->data[i][j].blue) / 3;
+            img->data[i][j].red = gray;
+            img->data[i][j].green = gray;
+            img->data[i][j].blue = gray;
         }
     }
 }
 
 void bmp24_brightness(t_bmp24 *img, int value) {
-    if (img == NULL || img->data == NULL) {
-        fprintf(stderr, "Error: invalid image pointer in bmp24_brightness\n");
-        return;
-    }
+    for (int i = 0; i < img->height; i++) {
+        for (int j = 0; j < img->width; j++) {
+            int r = img->data[i][j].red + value;
+            int g = img->data[i][j].green + value;
+            int b = img->data[i][j].blue + value;
 
-    if (img->width <= 0 || img->height <= 0) {
-        fprintf(stderr, "Error: invalid image dimensions in bmp24_brightness\n");
-        return;
-    }
-
-    for (int y = 0; y < img->height; y++) {
-        for (int x = 0; x < img->width; x++) {
-            int r = (int) img->data[y][x].red + value;
-            int g = (int) img->data[y][x].green + value;
-            int b = (int) img->data[y][x].blue + value;
-
-            img->data[y][x].red = (r > 255) ? 255 : (r < 0 ? 0 : (uint8_t) r);
-            img->data[y][x].green = (g > 255) ? 255 : (g < 0 ? 0 : (uint8_t) g);
-            img->data[y][x].blue = (b > 255) ? 255 : (b < 0 ? 0 : (uint8_t) b);
+            img->data[i][j].red = (r > 255) ? 255 : (r < 0) ? 0 : r;
+            img->data[i][j].green = (g > 255) ? 255 : (g < 0) ? 0 : g;
+            img->data[i][j].blue = (b > 255) ? 255 : (b < 0) ? 0 : b;
         }
     }
+}
+
+void bmp24_applyConvolution(t_bmp24 *img, float kernel[3][3]) {
+    t_pixel **newData = bmp24_allocateDataPixels(img->width, img->height);
+    if (!newData) return;
+
+    for (int y = 1; y < img->height - 1; y++) {
+        for (int x = 1; x < img->width - 1; x++) {
+            float sumR = 0, sumG = 0, sumB = 0;
+            for (int ky = -1; ky <= 1; ky++) {
+                for (int kx = -1; kx <= 1; kx++) {
+                    int px = x + kx;
+                    int py = y + ky;
+                    sumR += img->data[py][px].red * kernel[ky + 1][kx + 1];
+                    sumG += img->data[py][px].green * kernel[ky + 1][kx + 1];
+                    sumB += img->data[py][px].blue * kernel[ky + 1][kx + 1];
+                }
+            }
+            newData[y][x].red = fmin(fmax((int)sumR, 0), 255);
+            newData[y][x].green = fmin(fmax((int)sumG, 0), 255);
+            newData[y][x].blue = fmin(fmax((int)sumB, 0), 255);
+        }
+    }
+
+    // Remplacer les pixels
+    for (int y = 1; y < img->height - 1; y++) {
+        for (int x = 1; x < img->width - 1; x++) {
+            img->data[y][x] = newData[y][x];
+        }
+    }
+
+    bmp24_freeDataPixels(newData, img->height);
 }
