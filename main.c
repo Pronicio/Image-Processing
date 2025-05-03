@@ -5,6 +5,7 @@
 #include "./src/bmp8.h"
 #include "./src/bmp24.h"
 
+void menu_partie2(); // Déclaration pour pouvoir l'utiliser avant sa définition
 int main(void) {
     t_bmp8 *img = NULL;
     int choice;
@@ -100,3 +101,58 @@ int main(void) {
         }
     }
 }
+
+// -------- Menu Partie 2 : 24 bits --------
+void menu_partie2() {
+    t_bmp24 *image24 = NULL;
+    int choix;
+    do {
+        printf("\n--- Menu Image Couleur (24 bits) ---\n");
+        printf("1. Ouvrir image couleur\n");
+        printf("2. Sauvegarder image couleur\n");
+        printf("3. Appliquer un filtre\n");
+        printf("4. Appliquer un filtre de convolution\n");
+        printf("5. Afficher les infos\n");
+        printf("6. Retour\n");
+        printf(">>> Votre choix : ");
+        scanf("%d", &choix);
+
+        if (choix == 1) {
+            char chemin[256];
+            printf("Chemin de l'image : ");
+            scanf("%s", chemin);
+            image24 = bmp24_loadImage(chemin);
+        } else if (choix == 2 && image24) {
+            char chemin[256];
+            printf("Chemin de sortie : ");
+            scanf("%s", chemin);
+            bmp24_saveImage(chemin, image24);
+        } else if (choix == 3 && image24) {
+            int f;
+            printf("1. Négatif\n2. Niveaux de gris\n3. Luminosité\n>>> ");
+            scanf("%d", &f);
+            if (f == 1) bmp24_negative(image24);
+            else if (f == 2) bmp24_grayscale(image24);
+            else if (f == 3) {
+                int val;
+                printf("Valeur : ");
+                scanf("%d", &val);
+                bmp24_brightness(image24, val);
+            }
+        } else if (choix == 4 && image24) {
+            int conv;
+            printf("1. Box blur\n2. Gaussian blur\n3. Contours\n4. Relief\n5. Netteté\n>>> ");
+            scanf("%d", &conv);
+            if (conv == 1) bmp24_boxBlur(image24);
+            else if (conv == 2) bmp24_gaussianBlur(image24);
+            else if (conv == 3) bmp24_outline(image24);
+            else if (conv == 4) bmp24_emboss(image24);
+            else if (conv == 5) bmp24_sharpen(image24);
+        } else if (choix == 5 && image24) {
+            bmp24_printInfo(image24);
+        }
+    } while (choix != 6);
+
+    bmp24_free(image24);
+}
+       
