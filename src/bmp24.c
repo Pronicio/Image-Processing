@@ -232,22 +232,8 @@ void bmp24_applyConvolution(t_bmp24 *img, float kernel[3][3]) {
     bmp24_freeDataPixels(newData, img->height);
 }
 static void applyFilter24(t_bmp24 *img, float kernel[3][3]) {
-    int w = img->width, h = img->height;
-    t_pixel **old = img->data;
-    t_pixel **tmp = bmp24_allocateDataPixels(w, h);
-    if (!tmp) return;
-
-    for (int y = 1; y < h-1; y++) {
-        for (int x = 1; x < w-1; x++) {
-            tmp[y][x] = bmp24_convolution(img, x, y, (float**)kernel, 3);
-        }
-    }
-    // recopie tmp -> img->data (ou échange les pointeurs)
-    for (int y = 1; y < h-1; y++)
-        for (int x = 1; x < w-1; x++)
-            img->data[y][x] = tmp[y][x];
-
-    bmp24_freeDataPixels(tmp, h);
+       // Déléguer entièrement à bmp24_applyConvolution
+        bmp24_applyConvolution(img, kernel);
 }
 
 void bmp24_boxBlur(t_bmp24 *img) {
