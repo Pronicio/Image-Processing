@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <math.h>
 
 t_pixel **bmp24_allocateDataPixels(int width, int height) {
     // Allocate the array of pointers to rows (height)
