@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
+#include <math.h>
 #include "./src/bmp8.h"
 #include "./src/bmp24.h"
 
