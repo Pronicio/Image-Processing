@@ -230,3 +230,75 @@ void bmp24_applyConvolution(t_bmp24 *img, float kernel[3][3]) {
 
     bmp24_freeDataPixels(newData, img->height);
 }
+static void applyFilter24(t_bmp24 *img, float kernel[3][3]) {
+    int w = img->width, h = img->height;
+    t_pixel **old = img->data;
+    t_pixel **tmp = bmp24_allocateDataPixels(w, h);
+    if (!tmp) return;
+
+    for (int y = 1; y < h-1; y++) {
+        for (int x = 1; x < w-1; x++) {
+            tmp[y][x] = bmp24_convolution(img, x, y, (float**)kernel, 3);
+        }
+    }
+    // recopie tmp -> img->data (ou échange les pointeurs)
+    for (int y = 1; y < h-1; y++)
+        for (int x = 1; x < w-1; x++)
+            img->data[y][x] = tmp[y][x];
+
+    bmp24_freeDataPixels(tmp, h);
+}
+
+void bmp24_boxBlur(t_bmp24 *img) {
+    float k[3][3] = {
+        {1/9.0f,1/9.0f,1/9.0f},
+        {1/9.0f,1/9.0f,1/9.0f},
+        {1/9.0f,1/9.0f,1/9.0f}
+    };
+    applyFilter24(img, k);
+}
+
+void bmp24_gaussianBlur(t_bmp24 *img) {
+    float k[3][3] = {
+        {1/16.0f,2/16.0f,1/16.0f},
+        {2/16.0f,4/16.0f,2/16.0f},
+        {1/16.0f,2/16.0f,1/16.0f}
+    };
+    applyFilter24(img, k);
+}
+
+void bmp24_outline(t_bmp24 *img) {
+    float k[3][3] = {
+        {-1,-1,-1},
+        {-1, 8,-1},
+        {-1,-1,-1}
+    };
+    applyFilter24(img, k);
+}
+
+void bmp24_emboss(t_bmp24 *img) {
+    float k[3][3] = {
+        {-2,-1,0},
+        {-1, 1,1},
+        { 0, 1,2}
+    };
+    applyFilter24(img, k);
+}
+
+void bmp24_sharpen(t_bmp24 *img) {
+    float k[3][3] = {
+        { 0,-1, 0},
+        {-1, 5,-1},
+        { 0,-1, 0}
+    };
+    applyFilter24(img, k);
+}
+
+void bmp24_printInfo(t_bmp24 *img) {
+    printf("Image24 Info:\n");
+    printf(" Width: %d\n", img->width);
+    printf(" Height: %d\n", img->height);
+    printf(" Color Depth: %d\n", img->colorDepth);
+    // taille data = width*height*3
+    printf(" Data Size: %d\n", img->width * img->height * 3);
+}
