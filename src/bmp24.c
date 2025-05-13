@@ -131,13 +131,25 @@ t_bmp24 *bmp24_loadImage(const char *filename) {
     fread(&header, sizeof(t_bmp_header), 1, file);
     fread(&header_info, sizeof(t_bmp_info), 1, file);
 
-    if (header.type != BMP_TYPE || header_info.bits != 24) {
-        fprintf(stderr, "Erreur : le fichier n'est pas une image BMP 24 bits.\n");
+    if (header.type != BMP_TYPE) {
+        fprintf(stderr, "Erreur : signature BMP invalide (0x%04X).\n", header.type);
         fclose(file);
         return NULL;
     }
-
-    t_bmp24 *img = bmp24_allocate(header_info.width, header_info.height, header_info.bits);
+    if (header_info.biBitCount != 24) {
+        fprintf(stderr,
+            "Erreur : profondeur de couleur incorrecte (%u bits), attendu 24 bits.\n",
+            header_info.biBitCount);
+        fclose(file);
+        return NULL;
+    }
+    
+    t_bmp24 *img = bmp24_allocate(
+        header_info.biWidth,
+        header_info.biHeight,
+        header_info.biBitCount
+    );
+    
     if (!img) {
         fclose(file);
         return NULL;
