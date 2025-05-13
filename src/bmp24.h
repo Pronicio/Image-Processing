@@ -15,11 +15,11 @@ typedef struct {
 
 // Structure representing image information header (40 bytes)
 typedef struct {
-    uint32_t size; // Size of this structure (40 bytes)
-    int32_t width; // Image width in pixels
-    int32_t height; // Image height in pixels
-    uint16_t planes; // Number of planes (must be 1)
-    uint16_t bits; // Number of bits per pixel (must be 24 here)
+    uint32_t biSize;          // doît valoir 40
+    int32_t  biWidth;
+    int32_t  biHeight;
+    uint16_t biPlanes;        // doît valoir 1
+    uint16_t biBitCount; 
     uint32_t compression; // Compression type (0 = none)
     uint32_t imagesize; // Raw size of image data
     int32_t xresolution; // Horizontal resolution (pixel/meter)
