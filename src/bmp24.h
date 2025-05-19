@@ -8,7 +8,7 @@
 // Constantes utiles pour l'en-tête BMP
 #define BITMAP_MAGIC      0x00  // offset 0
 #define BITMAP_SIZE       0x02  // offset 2
-#define BITMAP_OFFSET     0x0A  // offset 10 :contentReference[oaicite:0]{index=0}:contentReference[oaicite:1]{index=1}
+#define BITMAP_OFFSET     0x0A  // offset 10 
 #define BITMAP_WIDTH      0x12  // offset 18
 #define BITMAP_HEIGHT     0x16  // offset 22
 #define BITMAP_DEPTH      0x1C  // offset 28
@@ -47,7 +47,7 @@ typedef struct {
     uint8_t red;
     uint8_t green;
     uint8_t blue;
-} t_pixel;  :contentReference[oaicite:2]{index=2}:contentReference[oaicite:3]{index=3}
+} t_pixel;  
 
 // Structure d’image 24 bits
 typedef struct {
@@ -61,7 +61,7 @@ typedef struct {
 
 // Fonctions de lecture/écriture brute
 void file_rawRead (uint32_t position, void *buffer, uint32_t size, size_t n, FILE *file);
-void file_rawWrite(uint32_t position, void *buffer, uint32_t size, size_t n, FILE *file);
+void file_rawWrite(uint32_t position, const void *buffer, uint32_t size, size_t n, FILE *file);
 
 // Allocation / libération
 t_pixel **bmp24_allocateDataPixels(int width, int height);
@@ -72,6 +72,8 @@ void      bmp24_free             (t_bmp24 *img);
 // I/O 24 bits
 t_bmp24  *bmp24_loadImage(const char *filename);
 void      bmp24_saveImage(const t_bmp24 *img, const char *filename);
+void bmp24_printInfo(const t_bmp24 *img);
+
 
 // Lecture/écriture des pixels
 void bmp24_readPixelData(FILE *file, t_bmp24 *img);
