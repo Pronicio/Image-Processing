@@ -105,6 +105,16 @@ void bmp24_saveImage(const t_bmp24 *img, const char *filename) {
     fclose(file);
 }
 
+// Affiche les info de l’image (à coller ici)
+void bmp24_printInfo(const t_bmp24 *img) {
+    printf("Fichier BMP 24 bits :\n");
+    printf(" - Taille du fichier : %u octets\n", img->header.size);
+    printf(" - Offset des pixels : %u octets\n", img->header.offset);
+    printf(" - Largeur  : %d px\n", img->width);
+    printf(" - Hauteur  : %d px\n", img->height);
+    printf(" - Profondeur : %d bits\n", img->colorDepth);
+    printf(" - Taille des données : %u octets\n", img->header_info.imagesize);
+}
 // Lire toutes les données pixel (BGR, bas-haut)
 void bmp24_readPixelData(FILE *file, t_bmp24 *img) {
     const uint32_t start = img->header.offset;
