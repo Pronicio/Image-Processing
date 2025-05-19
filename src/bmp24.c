@@ -3,7 +3,7 @@
 #include <stdlib.h>
 
 // Positionner + lire
-void file_rawRead(uint32_t position, void *buffer, uint32_t size, size_t n, FILE *file) {
+void file_rawWrite(uint32_t position, const void *buffer, uint32_t size, size_t n, FILE *file) {
     fseek(file, position, SEEK_SET);
     fread(buffer, size, n, file);
 }
