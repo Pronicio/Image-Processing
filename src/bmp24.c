@@ -4,119 +4,105 @@
 #include <stdio.h>
 #include <math.h>
 
-t_pixel **bmp24_allocateDataPixels(int width, int height) {
-    // Allocate the array of pointers to rows (height)
-    t_pixel **pixels = malloc(height * sizeof(t_pixel *));
-    if (pixels == NULL) {
-        fprintf(stderr, "Error: failed to allocate pixel rows.\n");
-        return NULL;
-    }
+// Helper: calculate row padding (each row multiple of 4 bytes)
+static int calculatePadding(int width) {
+    return (4 - (width * 3) % 4) % 4;
+}
 
-    // Allocate each row of pixels (width)
+// Load BMP image
+t_bmp24 *bmp24_loadImage(const char *filename) {
+    FILE *fp = fopen(filename, "rb");
+    if (!fp) { perror("Error opening file"); return NULL; }
+    t_bmp24 *img = malloc(sizeof(t_bmp24));
+    if (!img) { fclose(fp); return NULL; }
+    fread(&img->fileHeader, sizeof(t_bmp_header), 1, fp);
+    fread(&img->infoHeader, sizeof(t_bmp_info), 1, fp);
+    img->width   = img->infoHeader.width;
+    img->height  = img->infoHeader.height < 0
+                   ? -img->infoHeader.height
+                   : img->infoHeader.height;
+    img->padding = calculatePadding(img->width);
+    img->data    = bmp24_allocateDataPixels(img->width, img->height);
+    if (!img->data) { free(img); fclose(fp); return NULL; }
+    fseek(fp, img->fileHeader.offset, SEEK_SET);
+    bmp24_readPixelData(fp, img);
+    fclose(fp);
+    return img;
+}
+
+// Save BMP image
+int bmp24_saveImage(const char *filename, t_bmp24 *img) {
+    FILE *fp = fopen(filename, "wb");
+    if (!fp) { perror("Error opening file"); return -1; }
+    fwrite(&img->fileHeader, sizeof(t_bmp_header), 1, fp);
+    fwrite(&img->infoHeader, sizeof(t_bmp_info), 1, fp);
+    bmp24_writePixelData(fp, img);
+    fclose(fp);
+    return 0;
+}
+
+// Free image
+void bmp24_freeImage(t_bmp24 *img) {
+    if (!img) return;
+    bmp24_freeDataPixels(img->data, img->height);
+    free(img);
+}
+
+// Print info
+void bmp24_printInfo(const t_bmp24 *img) {
+    printf("File size: %u bytes\n", img->fileHeader.size);
+    printf("Image offset: %u bytes\n", img->fileHeader.offset);
+    printf("Header size: %u bytes\n", img->infoHeader.headerSize);
+    printf("Dimensions: %d x %d pixels\n", img->width, img->height);
+    printf("Bits per pixel: %u\n", img->infoHeader.bitsPerPixel);
+    printf("Image data size: %u bytes\n", img->infoHeader.imageSize);
+}
+
+// Allocate pixel data
+t_pixel **bmp24_allocateDataPixels(int width, int height) {
+    t_pixel **pixels = malloc(height * sizeof(t_pixel*));
+    if (!pixels) return NULL;
     for (int i = 0; i < height; i++) {
         pixels[i] = malloc(width * sizeof(t_pixel));
-        if (pixels[i] == NULL) {
-            fprintf(stderr, "Error: failed to allocate row %d.\n", i);
-            // Free already allocated rows before exiting
-            for (int j = 0; j < i; j++) {
-                free(pixels[j]);
-            }
+        if (!pixels[i]) {
+            while (i--) free(pixels[i]);
             free(pixels);
             return NULL;
         }
     }
-
     return pixels;
 }
 
-// Libération de la matrice de pixels
+// Free pixel data
 void bmp24_freeDataPixels(t_pixel **pixels, int height) {
-    if (pixels) {
-        for (int i = 0; i < height; i++) {
-            free(pixels[i]);
+    if (!pixels) return;
+    for (int i = 0; i < height; i++) free(pixels[i]);
+    free(pixels);
+}
+
+// Read pixels with padding
+void bmp24_readPixelData(FILE *fp, t_bmp24 *img) {
+    for (int y = 0; y < img->height; y++) {
+        for (int x = 0; x < img->width; x++) {
+            fread(&img->data[img->height - 1 - y][x],
+                  sizeof(t_pixel), 1, fp);
         }
-        free(pixels);
+        fseek(fp, img->padding, SEEK_CUR);
     }
 }
 
-t_bmp24 *bmp24_allocate(int width, int height, int colorDepth) {
-    // Allocate the t_bmp24 structure
-    t_bmp24 *img = malloc(sizeof(t_bmp24));
-    if (img == NULL) {
-        fprintf(stderr, "Error: failed to allocate t_bmp24 structure.\n");
-        return NULL;
-    }
-
-    // Initialize image fields
-    img->width = width;
-    img->height = height;
-    img->colorDepth = colorDepth;
-    img->data = bmp24_allocateDataPixels(width, height);
-    
-    if (!img->data) {
-        free(img);
-        return NULL;
-    }
-    return img;
-}
-
-// Libération de l'image
-void bmp24_free(t_bmp24 *img) {
-    if (img) {
-        bmp24_freeDataPixels(img->data, img->height);
-        free(img);
-    }
-}
-
-void file_rawRead(uint32_t position, void *buffer, uint32_t size, size_t n, FILE *file) {
-    fseek(file, position, SEEK_SET);
-    fread(buffer, size, n, file);
-}
-
-void file_rawWrite(uint32_t position, void *buffer, uint32_t size, size_t n, FILE *file) {
-    fseek(file, position, SEEK_SET);
-    fwrite(buffer, size, n, file);
-}
-
-
-void bmp24_readPixelData(t_bmp24 *img, FILE *file) {
-    int offset = img->header.offset;
-    fseek(file, offset, SEEK_SET);
-    int rowSize = ((img->width * 3 + 3) / 4) * 4;
-    int padding = rowSize - (img->width * 3);
-    
-    for (int i = img->height - 1; i >= 0; i--) {
-        for (int j = 0; j < img->width; j++) {
-            uint8_t bgr[3];
-            fread(bgr, sizeof(uint8_t), 3, file);
-            img->data[i][j].blue = bgr[0];
-            img->data[i][j].green = bgr[1];
-            img->data[i][j].red = bgr[2];
+// Write pixels with padding
+void bmp24_writePixelData(FILE *fp, const t_bmp24 *img) {
+    uint8_t pad[3] = {0};
+    for (int y = 0; y < img->height; y++) {
+        for (int x = 0; x < img->width; x++) {
+            fwrite(&img->data[img->height - 1 - y][x],
+                   sizeof(t_pixel), 1, fp);
         }
-        // Ignorer le padding en fin de ligne
-        fseek(file, padding, SEEK_CUR);
+        fwrite(pad, img->padding, 1, fp);
     }
 }
-void bmp24_writePixelData(t_bmp24 *img, FILE *file) {
-    int offset = img->header.offset;
-    fseek(file, offset, SEEK_SET);
-     int rowSize = ((img->width * 3 + 3) / 4) * 4;
-    int padding = rowSize - (img->width * 3);
-    uint8_t pad[3] = {0, 0, 0}; // max 3 octets de padding
-    
-    for (int i = img->height - 1; i >= 0; i--) {
-        for (int j = 0; j < img->width; j++) {
-            uint8_t bgr[3] = {
-                img->data[i][j].blue,
-                img->data[i][j].green,
-                img->data[i][j].red
-            };
-            fwrite(bgr, sizeof(uint8_t), 3, file);
-        }
-        // Écrire le padding à la fin de la ligne
-        fwrite(pad, sizeof(uint8_t), padding, file);
-    }
-}
+
 
 t_bmp24 *bmp24_loadImage(const char *filename) {
     FILE *file = fopen(filename, "rb");
