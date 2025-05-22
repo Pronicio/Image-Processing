@@ -7,4 +7,6 @@ add_executable(Image_Processing main.c
         src/bmp8.h
         src/bmp8.c
         src/bmp24.c
-        src/bmp24.h)
+        src/bmp24.h
+        src/histogram.c
+        src/histogram.h)

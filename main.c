@@ -4,9 +4,15 @@
 #include <math.h>
 #include "./src/bmp8.h"
 #include "./src/bmp24.h"
+#include "src/histogram.h"
 
-void menu_partie2(); // Déclaration pour pouvoir l'utiliser avant sa définition
+void menu_partie2();
+void test();
+
 int main(void) {
+    test();
+    return 1;
+
     t_bmp8 *img = NULL;
     int choice;
 
@@ -159,4 +165,18 @@ void menu_partie2() {
     } while (choix != 6);
 
     if (image24) bmp24_free(image24);
+}
+
+void test() {
+    const t_bmp8 * img = bmp8_loadImage("lena_gray.bmp");
+
+    if (img != NULL) {
+        printf("Image loaded successfully!\n");
+    } else {
+        printf("⚠️ Error loading image!\n");
+    }
+
+    bmp8_equalize(img);
+    bmp8_saveImage("lena_gray_eq.bmp", img);
+
 }
