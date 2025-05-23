@@ -4,7 +4,7 @@
 #include <math.h>
 
 #include "./src/bmp8.h"
-#include "./test/color.h"
+#include "./src/color.h"
 #include "./src/histogram.h"
 
 void test();
@@ -122,6 +122,7 @@ void test() {
     }
 
     bmp24_equalize(img);
+    bmp24_outline(img);
     bmp24_saveImage(img, "../images/flowers_color_res.bmp");
     printf("Image saved successfully!\n");
 
