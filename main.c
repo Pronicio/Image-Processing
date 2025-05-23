@@ -2,11 +2,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include "./src/bmp8.h"
-#include "./src/bmp24.h"
-#include "src/histogram.h"
 
-void menu_partie2();
+#include "./src/bmp8.h"
+#include "./test/color.h"
+#include "./src/histogram.h"
 
 void test();
 
@@ -98,7 +97,6 @@ int main(void) {
                 break;
             }
             case 5: {
-                menu_partie2();
                 break;
             }
             case 6: {
@@ -113,69 +111,19 @@ int main(void) {
     }
 }
 
-// -------- Menu Partie 2 : 24 bits --------
-void menu_partie2() {
-    t_bmp24 *image24 = NULL;
-    int choix;
-    do {
-        printf("\n--- Menu Image Couleur (24 bits) ---\n");
-        printf("1. Ouvrir image couleur\n");
-        printf("2. Sauvegarder image couleur\n");
-        printf("3. Appliquer un filtre (neg, gray, bright)\n");
-        printf("4. Appliquer un filtre de convolution\n");
-        printf("5. Afficher les infos\n");
-        printf("6. Retour\n");
-        printf(">>> Votre choix : ");
-        scanf("%d", &choix);
-
-        if (choix == 1) {
-            char path[256];
-            printf("Chemin de l'image : ");
-            scanf("%s", path);
-            image24 = bmp24_loadImage(path);
-        } else if (choix == 2 && image24) {
-            char path[256];
-            printf("Chemin de sortie : ");
-            scanf("%s", path);
-            bmp24_saveImage(image24, path);
-        } else if (choix == 3 && image24) {
-            int f;
-            printf("1. Négatif\n2. Niveaux de gris\n3. Luminosité\n>>> ");
-            scanf("%d", &f);
-            if (f == 1) bmp24_negative(image24);
-            else if (f == 2) bmp24_grayscale(image24);
-            else if (f == 3) {
-                int v;
-                printf("Valeur : ");
-                scanf("%d", &v);
-                bmp24_brightness(image24, v);
-            }
-        } else if (choix == 4 && image24) {
-            int conv;
-            printf("1. Box blur\n2. Gaussian blur\n3. Contours\n4. Relief\n5. Netteté\n>>> ");
-            scanf("%d", &conv);
-            if (conv == 1) bmp24_boxBlur(image24);
-            else if (conv == 2) bmp24_gaussianBlur(image24);
-            else if (conv == 3) bmp24_outline(image24);
-            else if (conv == 4) bmp24_emboss(image24);
-            else if (conv == 5) bmp24_sharpen(image24);
-        } else if (choix == 5 && image24) {
-            bmp24_printInfo(image24);
-        }
-    } while (choix != 6);
-
-    if (image24) bmp24_free(image24);
-}
-
 void test() {
-    const t_bmp8 *img = bmp24_loadImage("../images/flowers_color.bmp");
+    t_bmp24 *img = bmp24_loadImage("../images/flowers_color.bmp");
 
     if (img != NULL) {
         printf("Image loaded successfully!\n");
     } else {
         printf("⚠️ Error loading image!\n");
+        return;
     }
 
     bmp24_equalize(img);
-    bmp24_saveImage("flowers_color_eq.bmp", img);
+    bmp24_saveImage(img, "../images/flowers_color_res.bmp");
+    printf("Image saved successfully!\n");
+
+    bmp24_free(img);
 }

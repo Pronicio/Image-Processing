@@ -2,7 +2,7 @@
 #define HISTOGRAM_H
 
 #include "bmp8.h"
-#include "bmp24.h"
+#include "../test/color.h"
 
 unsigned int *bmp8_computeHistogram(t_bmp8 *img);
 
