@@ -2,16 +2,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-
+#include "./src/bmp24.h"
 #include "./src/bmp8.h"
 #include "./src/color.h"
 #include "./src/histogram.h"
 
-void test();
-
+void menu_partie2(void);
 int main(void) {
-    test();
-    return 1;
     t_bmp8 *img = NULL;
     int choice;
 
@@ -97,6 +94,7 @@ int main(void) {
                 break;
             }
             case 5: {
+                menu_partie2();
                 break;
             }
             case 6: {
@@ -109,22 +107,4 @@ int main(void) {
             }
         }
     }
-}
-
-void test() {
-    t_bmp24 *img = bmp24_loadImage("../images/flowers_color.bmp");
-
-    if (img != NULL) {
-        printf("Image loaded successfully!\n");
-    } else {
-        printf("⚠️ Error loading image!\n");
-        return;
-    }
-
-    bmp24_equalize(img);
-    bmp24_outline(img);
-    bmp24_saveImage(img, "../images/flowers_color_res.bmp");
-    printf("Image saved successfully!\n");
-
-    bmp24_free(img);
-}
+}   return 0
