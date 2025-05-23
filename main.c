@@ -2,10 +2,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include "./src/bmp24.h"
-#include "./src/bmp8.h"
-#include "./src/color.h"
-#include "./src/histogram.h"
+#include "src/bmp24.h"
+#include "src/bmp8.h"
+#include "src/color.h"
+#include "src/histogram.h"
+
 
 void menu_partie2(void);
 int main(void) {
