@@ -7,18 +7,19 @@
 #include "src/histogram.h"
 
 void menu_partie2();
+
 void test();
 
 int main(void) {
     test();
     return 1;
-
     t_bmp8 *img = NULL;
     int choice;
 
     while (1) {
         printf("Please select an option: \n");
-        printf("1. Open image \n2. Save image \n3. Apply filter \n4. Display image information \n5. Image couleur (24 bits) \n6. Exit\n");
+        printf(
+            "1. Open image \n2. Save image \n3. Apply filter \n4. Display image information \n5. Image couleur (24 bits) \n6. Exit\n");
         printf(">>> Your choice: ");
 
         scanf("%d", &choice);
@@ -97,7 +98,6 @@ int main(void) {
                 break;
             }
             case 5: {
-                // ← nouvelle case : uniquement lancement du menu Partie 2
                 menu_partie2();
                 break;
             }
@@ -142,7 +142,7 @@ void menu_partie2() {
             int f;
             printf("1. Négatif\n2. Niveaux de gris\n3. Luminosité\n>>> ");
             scanf("%d", &f);
-            if      (f == 1) bmp24_negative(image24);
+            if (f == 1) bmp24_negative(image24);
             else if (f == 2) bmp24_grayscale(image24);
             else if (f == 3) {
                 int v;
@@ -154,7 +154,7 @@ void menu_partie2() {
             int conv;
             printf("1. Box blur\n2. Gaussian blur\n3. Contours\n4. Relief\n5. Netteté\n>>> ");
             scanf("%d", &conv);
-            if      (conv == 1) bmp24_boxBlur(image24);
+            if (conv == 1) bmp24_boxBlur(image24);
             else if (conv == 2) bmp24_gaussianBlur(image24);
             else if (conv == 3) bmp24_outline(image24);
             else if (conv == 4) bmp24_emboss(image24);
@@ -168,7 +168,7 @@ void menu_partie2() {
 }
 
 void test() {
-    const t_bmp8 * img = bmp8_loadImage("lena_gray.bmp");
+    const t_bmp8 *img = bmp24_loadImage("../images/flowers_color.bmp");
 
     if (img != NULL) {
         printf("Image loaded successfully!\n");
@@ -176,7 +176,6 @@ void test() {
         printf("⚠️ Error loading image!\n");
     }
 
-    bmp8_equalize(img);
-    bmp8_saveImage("lena_gray_eq.bmp", img);
-
+    bmp24_equalize(img);
+    bmp24_saveImage("flowers_color_eq.bmp", img);
 }
