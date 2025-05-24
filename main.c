@@ -75,24 +75,14 @@ int main(void) {
                 break;
             }
             case 4: {
-                char filename[256];
-                printf("Enter the filename to display information: ");
-                scanf("%s", filename);
-
-                t_bmp8 *temp = bmp8_loadImage(filename);
-                if (temp == NULL) {
-                    // si temp est NULL, l’ouverture a échoué
-                    printf("Échec du chargement.\n");
-                    break;
-                }
-
-                printf("Image loaded successfully!\n");
-                printf("------ Image Information ---\n");
-                bmp8_printInfo(temp);
-                printf("----------------------------\n");
-
-                bmp8_free(temp);
-                break;
+                if (img == NULL) {
+                     printf("Aucune image chargée. Ouvrez d'abord une image (option 1).\n");
+                 } else {
+                     printf("------ Informations de l'image ------\n");
+                     bmp8_printInfo(img);
+                     printf("-------------------------------------\n");
+                 }
+                 break;
             }
                     case 5: {
             t_bmp24 *img24 = NULL;
