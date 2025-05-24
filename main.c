@@ -91,7 +91,7 @@ int main(void) {
             // on charge l’image couleur
             printf("Entrez le nom de votre image couleur (24 bits) : ");
             scanf("%s", filename);
-            img24 = color_loadImage(filename);
+            img24 = bmp24_loadImage(filename);
             if (!img24) {
                 printf("Échec du chargement.\n");
             } else {
@@ -100,11 +100,11 @@ int main(void) {
                 // on la sauvegarde
                 printf("Entrez le nom du fichier de sortie : ");
                 scanf("%s", filename);
-                color_saveImage(img24, filename);
+                bmp24_saveImage(img24, filename);
                 printf("Image couleur sauvegardée avec succès !\n");
 
                 // on libère la mémoire
-                color_free(img24);
+                bmp24_free(img24);
             }
 
             break;
