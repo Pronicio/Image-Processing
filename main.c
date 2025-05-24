@@ -2,14 +2,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include "bmp24.h"
 #include "bmp8.h"
 #include "color.h"
 #include "histogram.h"
 
 
 
-void menu_partie2(void);
 int main(void) {
     t_bmp8 *img = NULL;
     int choice;
@@ -82,23 +80,45 @@ int main(void) {
                 scanf("%s", filename);
 
                 t_bmp8 *temp = bmp8_loadImage(filename);
-                if (img != NULL) {
-                    printf("Image loaded successfully!\n");
-                } else {
+                if (temp == NULL) {
+                    // si temp est NULL, l’ouverture a échoué
+                    printf("Échec du chargement.\n");
                     break;
                 }
 
+                printf("Image loaded successfully!\n");
                 printf("------ Image Information ---\n");
-                bmp8_printInfo(img);
+                bmp8_printInfo(temp);
                 printf("----------------------------\n");
 
                 bmp8_free(temp);
                 break;
             }
-            case 5: {
-                menu_partie2();
-                break;
+                    case 5: {
+            t_bmp24 *img24 = NULL;
+            char filename[256];
+
+            // on charge l’image couleur
+            printf("Entrez le nom de votre image couleur (24 bits) : ");
+            scanf("%s", filename);
+            img24 = color_loadImage(filename);
+            if (!img24) {
+                printf("Échec du chargement.\n");
+            } else {
+                printf("Image couleur chargée avec succès !\n");
+
+                // on la sauvegarde
+                printf("Entrez le nom du fichier de sortie : ");
+                scanf("%s", filename);
+                color_saveImage(img24, filename);
+                printf("Image couleur sauvegardée avec succès !\n");
+
+                // on libère la mémoire
+                color_free(img24);
             }
+
+            break;
+        }    
             case 6: {
                 printf("Exiting...\n");
                 return 0;
@@ -109,4 +129,4 @@ int main(void) {
             }
         }
     }
-}   return 0
+}   
