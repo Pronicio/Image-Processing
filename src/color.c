@@ -123,8 +123,12 @@ void bmp24_writePixelData(t_bmp24 *image, FILE *file) {
 }
 
 t_bmp24 *bmp24_loadImage(const char *filename) {
+    char path[512];
+    strcpy(path, "../images/");
+    strcat(path, filename);
+
     // Ouvrir le fichier en mode binaire lecture
-    FILE *file = fopen(filename, "rb");
+    FILE *file = fopen(path, "rb");
     if (file == NULL) {
         fprintf(stderr, "Erreur: Impossible d'ouvrir le fichier %s\n", filename);
         return NULL;
@@ -133,8 +137,6 @@ t_bmp24 *bmp24_loadImage(const char *filename) {
     // Lire l'en-tête du fichier BMP
     t_bmp_header header;
     fread(&header, sizeof(t_bmp_header), 1, file);
-
-    printf("Type: 0x%x (attendu: 0x%x)\n", header.type, BMP_TYPE);
 
     // Vérifier que c'est bien un fichier BMP valide
     if (header.type != BMP_TYPE) {
@@ -146,9 +148,6 @@ t_bmp24 *bmp24_loadImage(const char *filename) {
     // Lire les informations d'en-tête de l'image
     t_bmp_info header_info;
     fread(&header_info, sizeof(t_bmp_info), 1, file);
-
-    printf("Profondeur de bits: %d\n", header_info.bits);
-    printf("Dimensions: %d x %d\n", header_info.width, header_info.height);
 
     // Vérifier que c'est une image 24 bits
     if (header_info.bits != 24) {
@@ -188,8 +187,12 @@ t_bmp24 *bmp24_loadImage(const char *filename) {
 }
 
 void bmp24_saveImage(t_bmp24 *img, const char *filename) {
+    char path[512];
+    strcpy(path, "../images/");
+    strcat(path, filename);
+
     // Ouvrir le fichier en mode binaire écriture
-    FILE *file = fopen(filename, "wb");
+    FILE *file = fopen(path, "wb");
     if (file == NULL) {
         fprintf(stderr, "Erreur: Impossible d'ouvrir le fichier %s en écriture\n", filename);
         return;
@@ -209,6 +212,28 @@ void bmp24_saveImage(t_bmp24 *img, const char *filename) {
 
     // Fermer le fichier
     fclose(file);
+}
+
+void bmp24_printInfo(t_bmp24 *img) {
+    if (img == NULL) {
+        printf("⚠️ Image non valide ou non chargée\n");
+        return;
+    }
+
+    printf("📏 Résolution: %d x %d pixels\n", img->width, img->height);
+    printf("🎨 Profondeur de couleur: %d bits\n", img->colorDepth);
+    printf("📊 Taille du fichier: %u octets\n", img->header.size);
+    printf("📍 Offset des données: %u octets\n", img->header.offset);
+    printf("🖼️ Taille des données image: %u octets\n", img->header_info.imagesize);
+
+    // Informations supplémentaires sur l'en-tête
+    printf("🔄 Compression: %u\n", img->header_info.compression);
+    printf("📐 Résolution X: %d pixels/mètre\n", img->header_info.xresolution);
+    printf("📐 Résolution Y: %d pixels/mètre\n", img->header_info.yresolution);
+
+    if (img->header_info.ncolors > 0) {
+        printf("🎭 Nombre de couleurs: %u\n", img->header_info.ncolors);
+    }
 }
 
 void bmp24_negative(t_bmp24 *img) {

@@ -83,7 +83,8 @@ t_bmp8 *bmp8_loadImage(const char *filename) {
     }
 
     // Close the file
-    if (fclose(file) == EOF) { // EOF is a macro that represents the end-of-file
+    if (fclose(file) == EOF) {
+        // EOF is a macro that represents the end-of-file
         fprintf(stderr, "Cannot close file\n");
         free(img->data);
         free(img);
@@ -95,7 +96,7 @@ t_bmp8 *bmp8_loadImage(const char *filename) {
 
 // Save a BMP8 image to a file
 // Source : https://koor.fr/C/cstdio/fwrite.wp
-void bmp8_saveImage(const char *filename, t_bmp8 *img) {
+void bmp8_saveImage(t_bmp8 *img, const char *filename) {
     if (img == NULL) {
         fprintf(stderr, "Cannot save NULL image\n");
         return;
@@ -104,6 +105,8 @@ void bmp8_saveImage(const char *filename, t_bmp8 *img) {
     char path[512];
     strcpy(path, "../images/");
     strcat(path, filename);
+
+    printf("%s \n\n", path);
 
     FILE *file = fopen(path, "wb"); // Open in binary write mode
 
@@ -133,11 +136,10 @@ void bmp8_printInfo(t_bmp8 *img) {
         return;
     }
 
-    printf("Image Info:\n");
-    printf("Width: %u\n", img->width);
-    printf("Height: %u\n", img->height);
-    printf("Color Depth: %u\n", img->colorDepth);
-    printf("Data Size: %u\n", img->dataSize);
+    printf("📐 Width: %u\n", img->width);
+    printf("📐 Height: %u\n", img->height);
+    printf("🎨 Color Depth: %u\n", img->colorDepth);
+    printf("🖼️ Data Size: %u\n", img->dataSize);
 }
 
 // Apply a negative effect to a BMP8 image
@@ -196,69 +198,246 @@ void bmp8_threshold(t_bmp8 *img, int threshold) {
     }
 }
 
-// Apply a filter to a BMP8 image using a kernel
 void bmp8_applyFilter(t_bmp8 *img, float **kernel, int kernelSize) {
     if (img == NULL || img->data == NULL || kernel == NULL) {
-        fprintf(stderr, "Cannot apply filter to NULL image or with NULL kernel\n");
+        fprintf(stderr, "Impossible d'appliquer un filtre à une image NULL\n");
         return;
     }
 
-    // Verify the kernel size
-    if (kernelSize % 2 == 0) {
-        fprintf(stderr, "Kernel size must be odd\n");
-        return;
-    }
-
-    // Calculate the half size of the kernel
+    // Calculer la moitié de la taille du noyau
     int n = kernelSize / 2;
 
-    // Create a copy of the image data to avoid modifying the original during convolution
-    unsigned char *dataCopy = (unsigned char *) malloc(img->dataSize * sizeof(unsigned char));
-    if (dataCopy == NULL) {
-        fprintf(stderr, "Memory allocation error for image data copy\n");
+    // Créer une copie des données de l'image pour éviter de modifier les valeurs pendant le calcul
+    unsigned char *tempData = (unsigned char *) malloc(img->dataSize * sizeof(unsigned char));
+    if (tempData == NULL) {
+        fprintf(stderr, "Erreur d'allocation mémoire pour la copie temporaire\n");
         return;
     }
-    memcpy(dataCopy, img->data, img->dataSize * sizeof(unsigned char));
+    memcpy(tempData, img->data, img->dataSize);
 
-    // Iterate through each pixel in the image data
+    // Appliquer le filtre seulement sur les pixels internes (éviter les bords)
     for (unsigned int y = n; y < img->height - n; y++) {
         for (unsigned int x = n; x < img->width - n; x++) {
-            // Calculate the index of the pixel in the image data
-            unsigned int index = y * img->width + x;
-
-            // Apply the kernel to the pixel
             float sum = 0.0f;
+
+            // Appliquer la convolution
             for (int i = -n; i <= n; i++) {
                 for (int j = -n; j <= n; j++) {
-                    // Calculate the coordinates of the neighbor pixel
-                    unsigned int neighborX = x - j;
-                    unsigned int neighborY = y - i;
-                    unsigned int neighborIndex = neighborY * img->width + neighborX;
+                    // Calculer l'index du pixel voisin
+                    unsigned int neighborIdx = (y + i) * img->width + (x + j);
+                    // Calculer l'index dans le noyau (i+n, j+n pour convertir de [-n,n] à [0,kernelSize-1])
+                    int kernelIdx_i = i + n;
+                    int kernelIdx_j = j + n;
 
-                    // Get the value of the neighbor pixel
-                    unsigned char neighborValue = dataCopy[neighborIndex];
-
-                    // Map the kernel coordinates to the kernel array
-                    int kernel_i = i + n;
-                    int kernel_j = j + n;
-
-                    // Apply the kernel value to the neighbor pixel value
-                    sum += neighborValue * kernel[kernel_i][kernel_j];
+                    sum += tempData[neighborIdx] * kernel[kernelIdx_i][kernelIdx_j];
                 }
             }
 
-            // Validate the sum to ensure it stays within the range [0, 255]
-            if (sum > 255.0f) {
-                sum = 255.0f;
-            } else if (sum < 0.0f) {
-                sum = 0.0f;
-            }
+            // Limiter la valeur calculée à l'intervalle [0, 255]
+            int newValue = (int) sum;
+            if (newValue > 255) newValue = 255;
+            if (newValue < 0) newValue = 0;
 
-            // Define the new pixel value
-            img->data[index] = (unsigned char) sum;
+            // Mettre à jour le pixel dans l'image originale
+            img->data[y * img->width + x] = (unsigned char) newValue;
         }
     }
 
-    // Free the copy of the image data
-    free(dataCopy);
+    // Libérer la mémoire de la copie temporaire
+    free(tempData);
+}
+
+// Box blur (flou uniforme)
+void bmp8_box_blur(t_bmp8 *img) {
+    if (img == NULL) return;
+
+    // Créer le noyau de taille 3x3
+    float **kernel = (float **) malloc(3 * sizeof(float *));
+    if (kernel == NULL) return;
+
+    for (int i = 0; i < 3; i++) {
+        kernel[i] = (float *) malloc(3 * sizeof(float));
+        if (kernel[i] == NULL) {
+            // Libérer la mémoire déjà allouée en cas d'erreur
+            for (int j = 0; j < i; j++) {
+                free(kernel[j]);
+            }
+            free(kernel);
+            return;
+        }
+
+        // Initialiser avec 1/9 pour chaque élément
+        for (int j = 0; j < 3; j++) {
+            kernel[i][j] = 1.0f / 9.0f;
+        }
+    }
+
+    // Appliquer le filtre à l'image
+    bmp8_applyFilter(img, kernel, 3);
+
+    // Libérer la mémoire du noyau
+    for (int i = 0; i < 3; i++) {
+        free(kernel[i]);
+    }
+    free(kernel);
+}
+
+// Gaussian blur (flou gaussien)
+void bmp8_gaussian_blur(t_bmp8 *img) {
+    if (img == NULL) return;
+
+    // Créer le noyau de taille 3x3
+    float **kernel = (float **) malloc(3 * sizeof(float *));
+    if (kernel == NULL) return;
+
+    for (int i = 0; i < 3; i++) {
+        kernel[i] = (float *) malloc(3 * sizeof(float));
+        if (kernel[i] == NULL) {
+            for (int j = 0; j < i; j++) {
+                free(kernel[j]);
+            }
+            free(kernel);
+            return;
+        }
+    }
+
+    // Matrice de flou gaussien
+    kernel[0][0] = 1.0f / 16.0f;
+    kernel[0][1] = 2.0f / 16.0f;
+    kernel[0][2] = 1.0f / 16.0f;
+    kernel[1][0] = 2.0f / 16.0f;
+    kernel[1][1] = 4.0f / 16.0f;
+    kernel[1][2] = 2.0f / 16.0f;
+    kernel[2][0] = 1.0f / 16.0f;
+    kernel[2][1] = 2.0f / 16.0f;
+    kernel[2][2] = 1.0f / 16.0f;
+
+    // Appliquer le filtre à l'image
+    bmp8_applyFilter(img, kernel, 3);
+
+    // Libérer la mémoire du noyau
+    for (int i = 0; i < 3; i++) {
+        free(kernel[i]);
+    }
+    free(kernel);
+}
+
+// Outline (détection de contours)
+void bmp8_outline(t_bmp8 *img) {
+    if (img == NULL) return;
+
+    // Créer le noyau de taille 3x3
+    float **kernel = (float **) malloc(3 * sizeof(float *));
+    if (kernel == NULL) return;
+
+    for (int i = 0; i < 3; i++) {
+        kernel[i] = (float *) malloc(3 * sizeof(float));
+        if (kernel[i] == NULL) {
+            for (int j = 0; j < i; j++) {
+                free(kernel[j]);
+            }
+            free(kernel);
+            return;
+        }
+    }
+
+    // Matrice de détection de contours
+    kernel[0][0] = -1.0f;
+    kernel[0][1] = -1.0f;
+    kernel[0][2] = -1.0f;
+    kernel[1][0] = -1.0f;
+    kernel[1][1] = 8.0f;
+    kernel[1][2] = -1.0f;
+    kernel[2][0] = -1.0f;
+    kernel[2][1] = -1.0f;
+    kernel[2][2] = -1.0f;
+
+    // Appliquer le filtre à l'image
+    bmp8_applyFilter(img, kernel, 3);
+
+    // Libérer la mémoire du noyau
+    for (int i = 0; i < 3; i++) {
+        free(kernel[i]);
+    }
+    free(kernel);
+}
+
+// Emboss (relief)
+void bmp8_emboss(t_bmp8 *img) {
+    if (img == NULL) return;
+
+    // Créer le noyau de taille 3x3
+    float **kernel = (float **) malloc(3 * sizeof(float *));
+    if (kernel == NULL) return;
+
+    for (int i = 0; i < 3; i++) {
+        kernel[i] = (float *) malloc(3 * sizeof(float));
+        if (kernel[i] == NULL) {
+            for (int j = 0; j < i; j++) {
+                free(kernel[j]);
+            }
+            free(kernel);
+            return;
+        }
+    }
+
+    // Matrice d'effet de relief
+    kernel[0][0] = -2.0f;
+    kernel[0][1] = -1.0f;
+    kernel[0][2] = 0.0f;
+    kernel[1][0] = -1.0f;
+    kernel[1][1] = 1.0f;
+    kernel[1][2] = 1.0f;
+    kernel[2][0] = 0.0f;
+    kernel[2][1] = 1.0f;
+    kernel[2][2] = 2.0f;
+
+    // Appliquer le filtre à l'image
+    bmp8_applyFilter(img, kernel, 3);
+
+    // Libérer la mémoire du noyau
+    for (int i = 0; i < 3; i++) {
+        free(kernel[i]);
+    }
+    free(kernel);
+}
+
+// Sharpen (netteté)
+void bmp8_sharpen(t_bmp8 *img) {
+    if (img == NULL) return;
+
+    // Créer le noyau de taille 3x3
+    float **kernel = (float **) malloc(3 * sizeof(float *));
+    if (kernel == NULL) return;
+
+    for (int i = 0; i < 3; i++) {
+        kernel[i] = (float *) malloc(3 * sizeof(float));
+        if (kernel[i] == NULL) {
+            for (int j = 0; j < i; j++) {
+                free(kernel[j]);
+            }
+            free(kernel);
+            return;
+        }
+    }
+
+    // Matrice d'amélioration de la netteté
+    kernel[0][0] = 0.0f;
+    kernel[0][1] = -1.0f;
+    kernel[0][2] = 0.0f;
+    kernel[1][0] = -1.0f;
+    kernel[1][1] = 5.0f;
+    kernel[1][2] = -1.0f;
+    kernel[2][0] = 0.0f;
+    kernel[2][1] = -1.0f;
+    kernel[2][2] = 0.0f;
+
+    // Appliquer le filtre à l'image
+    bmp8_applyFilter(img, kernel, 3);
+
+    // Libérer la mémoire du noyau
+    for (int i = 0; i < 3; i++) {
+        free(kernel[i]);
+    }
+    free(kernel);
 }

@@ -15,7 +15,7 @@ typedef struct {
 
 // Function prototypes for BMP8 image processing
 t_bmp8 *bmp8_loadImage(const char *filename);
-void bmp8_saveImage(const char *filename, t_bmp8 *img);
+void bmp8_saveImage(t_bmp8 *img, const char *filename);
 void bmp8_free(t_bmp8 *img);
 void bmp8_printInfo(t_bmp8 *img);
 
@@ -26,6 +26,13 @@ void bmp8_threshold(t_bmp8 *img, int threshold);
 
 // Apply a filter to a BMP8 image using a kernel
 void bmp8_applyFilter(t_bmp8 * img, float ** kernel, int kernelSize);
+
+// Filters with convolution
+void bmp8_box_blur(t_bmp8* img);
+void bmp8_gaussian_blur(t_bmp8* img);
+void bmp8_outline(t_bmp8* img);
+void bmp8_emboss(t_bmp8* img);
+void bmp8_sharpen(t_bmp8* img);
 
 
 #endif //BMP8_H

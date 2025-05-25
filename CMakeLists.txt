@@ -9,4 +9,6 @@ add_executable(Image_Processing main.c
         src/color.h
         src/color.c
         src/histogram.c
-        src/histogram.h)
+        src/histogram.h
+        src/utils/utils.c
+        src/utils/utils.h)
