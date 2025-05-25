@@ -3,61 +3,65 @@
 #include <stdlib.h>
 #include <string.h>
 
-// Load a BMP8 image from a file
-// Source : https://koor.fr/C/cstdio/fread.wp
+/**
+ * Charge une image BMP 8 bits à partir d'un fichier
+ *
+ * @param filename Le chemin vers le fichier à charger
+ * @return t_bmp8*: Pointeur vers l'image chargée ou NULL en cas d'erreur
+ */
 t_bmp8 *bmp8_loadImage(const char *filename) {
     char path[512];
     strcpy(path, "../images/");
     strcat(path, filename);
 
-    FILE *file = fopen(path, "rb"); // Open in binary read mode
+    FILE *file = fopen(path, "rb"); // Ouverture en mode lecture binaire
 
     if (file == NULL) {
-        fprintf(stderr, "File not found\n");
+        fprintf(stderr, "Fichier non trouvé\n");
         return NULL;
     }
 
-    // Allocate memory for the image
+    // Allocation de mémoire pour l'image
     t_bmp8 *img = (t_bmp8 *) malloc(sizeof(t_bmp8));
     if (img == NULL) {
-        fprintf(stderr, "Memory allocation error\n");
+        fprintf(stderr, "Erreur d'allocation mémoire\n");
         fclose(file);
         return NULL;
     }
 
-    // Read the header (54 bytes)
+    // Lecture de l'en-tête (54 octets)
     if (fread(img->header, 1, 54, file) != 54) {
-        fprintf(stderr, "Error reading header\n");
+        fprintf(stderr, "Erreur lors de la lecture de l'en-tête\n");
         free(img);
         fclose(file);
         return NULL;
     }
 
-    // Check if it's a BMP file (header should start with 'BM')
+    // Vérification s'il s'agit d'un fichier BMP (l'en-tête doit commencer par 'BM')
     if (img->header[0] != 'B' || img->header[1] != 'M') {
-        fprintf(stderr, "Not a valid BMP file\n");
+        fprintf(stderr, "Fichier BMP non valide\n");
         free(img);
         fclose(file);
         return NULL;
     }
 
-    // Extract image info from header
-    // Source : TABLE 1 - BMP image header structure
+    // Extraction des informations de l'image depuis l'en-tête
+    // Source : TABLE 1 - Structure d'en-tête d'image BMP
     img->width = *(unsigned int *) &img->header[18];
     img->height = *(unsigned int *) &img->header[22];
     img->colorDepth = *(unsigned short *) &img->header[28];
     img->dataSize = *(unsigned int *) &img->header[34];
 
-    // Check if it's an 8-bit image
+    // Vérification s'il s'agit d'une image 8 bits
     if (img->colorDepth != 8) {
-        fprintf(stderr, "Not an 8-bit BMP image (color depth is %d bits)\n", img->colorDepth);
+        fprintf(stderr, "Ce n'est pas une image BMP 8 bits (profondeur de couleur : %d bits)\n", img->colorDepth);
         free(img);
         fclose(file);
         return NULL;
     }
 
     if (fread(img->colorTable, sizeof(unsigned char), 1024, file) != 1024) {
-        fprintf(stderr, "Error reading color table\n");
+        fprintf(stderr, "Erreur lors de la lecture de la table de couleurs\n");
         free(img->colorTable);
         free(img->header);
         free(img);
@@ -65,27 +69,27 @@ t_bmp8 *bmp8_loadImage(const char *filename) {
         return NULL;
     }
 
-    // Read the image data
+    // Lecture des données de l'image
     img->data = (unsigned char *) malloc(img->dataSize * sizeof(unsigned char));
     if (img->data == NULL) {
-        fprintf(stderr, "Memory allocation error for image data\n");
+        fprintf(stderr, "Erreur d'allocation mémoire pour les données de l'image\n");
         free(img);
         fclose(file);
         return NULL;
     }
 
     if (fread(img->data, sizeof(unsigned char), img->dataSize, file) != img->dataSize) {
-        fprintf(stderr, "Error reading image data\n");
+        fprintf(stderr, "Erreur lors de la lecture des données de l'image\n");
         free(img->data);
         free(img);
         fclose(file);
         return NULL;
     }
 
-    // Close the file
+    // Fermeture du fichier
     if (fclose(file) == EOF) {
-        // EOF is a macro that represents the end-of-file
-        fprintf(stderr, "Cannot close file\n");
+        // EOF est une macro qui représente la fin d'un fichier
+        fprintf(stderr, "Impossible de fermer le fichier\n");
         free(img->data);
         free(img);
         return NULL;
@@ -94,11 +98,15 @@ t_bmp8 *bmp8_loadImage(const char *filename) {
     return img;
 }
 
-// Save a BMP8 image to a file
-// Source : https://koor.fr/C/cstdio/fwrite.wp
+/**
+ * Sauvegarde une image BMP 8 bits dans un fichier
+ *
+ * @param img L'image à sauvegarder
+ * @param filename Le nom du fichier de destination
+ */
 void bmp8_saveImage(t_bmp8 *img, const char *filename) {
     if (img == NULL) {
-        fprintf(stderr, "Cannot save NULL image\n");
+        fprintf(stderr, "Impossible de sauvegarder une image NULL\n");
         return;
     }
 
@@ -108,10 +116,10 @@ void bmp8_saveImage(t_bmp8 *img, const char *filename) {
 
     printf("%s \n\n", path);
 
-    FILE *file = fopen(path, "wb"); // Open in binary write mode
+    FILE *file = fopen(path, "wb"); // Ouverture en mode écriture binaire
 
     if (file == NULL) {
-        fprintf(stderr, "Cannot create file: %s\n", filename);
+        fprintf(stderr, "Impossible de créer le fichier : %s\n", filename);
         return;
     }
 
@@ -121,83 +129,111 @@ void bmp8_saveImage(t_bmp8 *img, const char *filename) {
     fclose(file);
 }
 
-// Free the memory allocated for a BMP8 image
-// Source : https://koor.fr/C/cstdlib/free.wp
+/**
+ * Libère la mémoire allouée pour une image BMP 8 bits
+ *
+ * @param img L'image à libérer
+ */
 void bmp8_free(t_bmp8 *img) {
     if (img == NULL) { return; }
     free(img->data);
     free(img);
 }
 
-// Print information about a BMP8 image
+/**
+ * Affiche les informations d'une image BMP 8 bits
+ *
+ * @param img L'image dont on veut afficher les informations
+ */
 void bmp8_printInfo(t_bmp8 *img) {
     if (img == NULL) {
-        fprintf(stderr, "Cannot display info for NULL image\n");
+        fprintf(stderr, "Impossible d'afficher les informations d'une image NULL\n");
         return;
     }
 
-    printf("📐 Width: %u\n", img->width);
-    printf("📐 Height: %u\n", img->height);
-    printf("🎨 Color Depth: %u\n", img->colorDepth);
-    printf("🖼️ Data Size: %u\n", img->dataSize);
+    printf("📐 Largeur : %u\n", img->width);
+    printf("📐 Hauteur : %u\n", img->height);
+    printf("🎨 Profondeur de couleur : %u\n", img->colorDepth);
+    printf("🖼️ Taille des données : %u\n", img->dataSize);
 }
 
-// Apply a negative effect to a BMP8 image
+/**
+ * Applique un effet négatif à une image BMP 8 bits
+ *
+ * @param img L'image à modifier
+ */
 void bmp8_negative(t_bmp8 *img) {
     if (img == NULL || img->data == NULL) {
-        fprintf(stderr, "Cannot apply negative effect to NULL image\n");
+        fprintf(stderr, "Impossible d'appliquer l'effet négatif à une image NULL\n");
         return;
     }
 
-    // Iterate through each pixel in the image data
+    // Parcours de chaque pixel de l'image
     for (unsigned int i = 0; i < img->dataSize; ++i) {
-        // Invert pixel value (255 - value)
+        // Inversion de la valeur du pixel (255 - valeur)
         img->data[i] = 255 - img->data[i];
     }
 }
 
-// Modify the luminance of a BMP8 image
+/**
+ * Modifie la luminosité d'une image BMP 8 bits
+ *
+ * @param img L'image à modifier
+ * @param value La valeur à ajouter à chaque pixel (-255 à 255)
+ */
 void bmp8_brightness(const t_bmp8 *img, int value) {
     if (img == NULL || img->data == NULL) {
-        fprintf(stderr, "Cannot adjust brightness for NULL image\n");
+        fprintf(stderr, "Impossible d'ajuster la luminosité d'une image NULL\n");
         return;
     }
 
-    // Iterate through each pixel in the image data
+    // Parcours de chaque pixel de l'image
     for (unsigned int i = 0; i < img->dataSize; ++i) {
-        // Calculate the new pixel value
+        // Calcul de la nouvelle valeur du pixel
         int newPixelValue = img->data[i] + value;
 
-        // Ensure the value is within the valid range [0, 255]
+        // Vérification que la valeur reste dans l'intervalle valide [0, 255]
         if (newPixelValue > 255) {
             newPixelValue = 255;
         } else if (newPixelValue < 0) {
             newPixelValue = 0;
         }
 
-        // Assign the new pixel value
+        // Attribution de la nouvelle valeur au pixel
         img->data[i] = (unsigned char) newPixelValue;
     }
 }
 
-// Transform a BMP8 image to its negative
+/**
+ * Applique un seuillage à une image BMP 8 bits
+ *
+ * @param img L'image à modifier
+ * @param threshold La valeur de seuil (0-255)
+ */
 void bmp8_threshold(t_bmp8 *img, int threshold) {
     if (img == NULL || img->data == NULL) {
-        fprintf(stderr, "Cannot apply threshold to NULL image\n");
+        fprintf(stderr, "Impossible d'appliquer le seuillage à une image NULL\n");
         return;
     }
 
-    // Iterate through each pixel in the image data
+    // Parcours de chaque pixel de l'image
     for (unsigned int i = 0; i < img->dataSize; ++i) {
-        // Apply the threshold
+        // Application du seuil
         if (img->data[i] >= threshold) {
-            img->data[i] = 255; // White if value >= threshold
+            img->data[i] = 255; // Blanc si valeur >= seuil
         } else {
-            img->data[i] = 0; // Black if value < threshold
+            img->data[i] = 0; // Noir si valeur < seuil
         }
     }
 }
 
+/**
+ * Applique un filtre à une image BMP 8 bits en utilisant un noyau de convolution
+ *
+ * @param img L'image à modifier
+ * @param kernel Le noyau de convolution à appliquer
+ * @param kernelSize La taille du noyau (doit être impair)
+ */
 void bmp8_applyFilter(t_bmp8 *img, float **kernel, int kernelSize) {
     if (img == NULL || img->data == NULL || kernel == NULL) {
         fprintf(stderr, "Impossible d'appliquer un filtre à une image NULL\n");
@@ -247,7 +283,11 @@ void bmp8_applyFilter(t_bmp8 *img, float **kernel, int kernelSize) {
     free(tempData);
 }
 
-// Box blur (flou uniforme)
+/**
+ * Applique un flou rectangulaire à une image BMP 8 bits
+ *
+ * @param img L'image à modifier
+ */
 void bmp8_box_blur(t_bmp8 *img) {
     if (img == NULL) return;
 
@@ -282,7 +322,11 @@ void bmp8_box_blur(t_bmp8 *img) {
     free(kernel);
 }
 
-// Gaussian blur (flou gaussien)
+/**
+ * Applique un flou gaussien à une image BMP 8 bits
+ *
+ * @param img L'image à modifier
+ */
 void bmp8_gaussian_blur(t_bmp8 *img) {
     if (img == NULL) return;
 
@@ -322,7 +366,11 @@ void bmp8_gaussian_blur(t_bmp8 *img) {
     free(kernel);
 }
 
-// Outline (détection de contours)
+/**
+ * Détecte les contours d'une image BMP 8 bits
+ *
+ * @param img L'image à modifier
+ */
 void bmp8_outline(t_bmp8 *img) {
     if (img == NULL) return;
 
@@ -362,7 +410,11 @@ void bmp8_outline(t_bmp8 *img) {
     free(kernel);
 }
 
-// Emboss (relief)
+/**
+ * Applique un effet de relief à une image BMP 8 bits
+ *
+ * @param img L'image à modifier
+ */
 void bmp8_emboss(t_bmp8 *img) {
     if (img == NULL) return;
 
@@ -402,7 +454,11 @@ void bmp8_emboss(t_bmp8 *img) {
     free(kernel);
 }
 
-// Sharpen (netteté)
+/**
+ * Améliore la netteté d'une image BMP 8 bits
+ *
+ * @param img L'image à modifier
+ */
 void bmp8_sharpen(t_bmp8 *img) {
     if (img == NULL) return;
 

@@ -16,5 +16,4 @@ typedef enum {
  */
 BMP_Type bmp_getFileType(const char *filename);
 
-
 #endif

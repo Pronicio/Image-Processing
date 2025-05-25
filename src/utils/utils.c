@@ -3,6 +3,12 @@
 #include <stdio.h>
 #include <string.h>
 
+/**
+ * Détermine le type d'un fichier BMP (8 ou 24 bits par pixel)
+ *
+ * @param filename Le chemin vers le fichier BMP à analyser
+ * @return BMP_Type: Le type de BMP identifié ou une valeur d'erreur
+ */
 BMP_Type bmp_getFileType(const char *filename) {
     char path[512];
     strcpy(path, "../images/");
@@ -29,7 +35,7 @@ BMP_Type bmp_getFileType(const char *filename) {
         return BMP_UNKNOWN;
     }
 
-    // Extraire la profondeur de couleur de l'en-tête comme dans bmp8_loadImage
+    // Extraire la profondeur de couleur de l'en-tête
     unsigned short colorDepth = *(unsigned short *) &header[28];
 
     fclose(file);

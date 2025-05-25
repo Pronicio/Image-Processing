@@ -3,36 +3,43 @@
 #include <stdlib.h>
 #include <string.h>
 
-/*
-* @brief Positionne le curseur de fichier à la position dans le fichier file,
-* puis lit n éléments de taille size dans buffer.
-* @param position La position à partir de laquelle il faut lire dans file.
-* @param buffer Le buffer pour stocker les données lues.
-* @param size La taille de chaque élément à lire.
-* @param n Le nombre d'éléments à lire.
-* @param file Le descripteur de fichier dans lequel il faut lire.
-* @return void
-*/
+/**
+ * Positionne le curseur de fichier à la position dans le fichier file,
+ * puis lit n éléments de taille size dans buffer
+ *
+ * @param position La position à partir de laquelle il faut lire dans file
+ * @param buffer Le buffer pour stocker les données lues
+ * @param size La taille de chaque élément à lire
+ * @param n Le nombre d'éléments à lire
+ * @param file Le descripteur de fichier dans lequel il faut lire
+ */
 void file_rawRead(uint32_t position, void *buffer, uint32_t size, size_t n, FILE *file) {
     fseek(file, position, SEEK_SET);
     fread(buffer, size, n, file);
 }
 
-/*
-* @brief Positionne le curseur de fichier à la position dans le fichier file,
-* puis écrit n éléments de taille size depuis le buffer.
-* @param position La position à partir de laquelle il faut écrire dans file.
-* @param buffer Le buffer contenant les éléments à écrire.
-* @param size La taille de chaque élément à écrire.
-* @param n Le nombre d'éléments à écrire.
-* @param file Le descripteur de fichier dans lequel il faut écrire.
-* @return void
-*/
+/**
+ * Positionne le curseur de fichier à la position dans le fichier file,
+ * puis écrit n éléments de taille size depuis le buffer
+ *
+ * @param position La position à partir de laquelle il faut écrire dans file
+ * @param buffer Le buffer contenant les éléments à écrire
+ * @param size La taille de chaque élément à écrire
+ * @param n Le nombre d'éléments à écrire
+ * @param file Le descripteur de fichier dans lequel il faut écrire
+ */
 void file_rawWrite(uint32_t position, void *buffer, uint32_t size, size_t n, FILE *file) {
     fseek(file, position, SEEK_SET);
     fwrite(buffer, size, n, file);
 }
 
+/**
+ * Alloue de la mémoire pour les pixels d'une image BMP 24 bits
+ *
+ * @param width Largeur de l'image en pixels
+ * @param height Hauteur de l'image en pixels
+ * @return t_pixel**: Tableau bidimensionnel de pixels ou NULL en cas d'erreur
+ */
 t_pixel **bmp24_allocateDataPixels(int width, int height) {
     t_pixel **pixels = malloc(height * sizeof(t_pixel *));
     if (pixels == NULL) {
@@ -60,6 +67,13 @@ t_pixel **bmp24_allocateDataPixels(int width, int height) {
 
     return pixels;
 }
+
+/**
+ * Libère la mémoire allouée pour les pixels d'une image BMP 24 bits
+ *
+ * @param pixels Tableau de pixels à libérer
+ * @param height Hauteur de l'image en pixels
+ */
 void bmp24_freeDataPixels(t_pixel **pixels, int height) {
     if (pixels == NULL) return;
 
@@ -71,6 +85,14 @@ void bmp24_freeDataPixels(t_pixel **pixels, int height) {
     free(pixels);
 }
 
+/**
+ * Alloue de la mémoire pour une structure d'image BMP 24 bits
+ *
+ * @param width Largeur de l'image en pixels
+ * @param height Hauteur de l'image en pixels
+ * @param colorDepth Profondeur de couleur en bits (devrait être 24)
+ * @return t_bmp24*: Pointeur vers l'image créée ou NULL en cas d'erreur
+ */
 t_bmp24 *bmp24_allocate(int width, int height, int colorDepth) {
     t_bmp24 *img = malloc(sizeof(t_bmp24));
     if (img == NULL) {
@@ -91,6 +113,12 @@ t_bmp24 *bmp24_allocate(int width, int height, int colorDepth) {
 
     return img;
 }
+
+/**
+ * Libère la mémoire allouée pour une image BMP 24 bits
+ *
+ * @param img Pointeur vers l'image à libérer
+ */
 void bmp24_free(t_bmp24 *img) {
     if (img == NULL) return;
 
@@ -98,11 +126,26 @@ void bmp24_free(t_bmp24 *img) {
     free(img);
 }
 
+/**
+ * Lit la valeur d'un pixel à une position spécifique
+ *
+ * @param image Pointeur vers l'image BMP 24 bits
+ * @param x Coordonnée x du pixel
+ * @param y Coordonnée y du pixel
+ * @param file Fichier BMP ouvert
+ */
 void bmp24_readPixelValue(t_bmp24 *image, int x, int y, FILE *file) {
     int y_pos = image->height - 1 - y; // Inverser les lignes (bas en haut)
     fseek(file, image->header.offset + (y_pos * image->width + x) * 3, SEEK_SET);
     fread(&image->data[y][x], sizeof(t_pixel), 1, file);
 }
+
+/**
+ * Lit toutes les données de pixels d'une image BMP 24 bits
+ *
+ * @param image Pointeur vers l'image BMP 24 bits
+ * @param file Fichier BMP ouvert
+ */
 void bmp24_readPixelData(t_bmp24 *image, FILE *file) {
     for (int y = 0; y < image->height; y++) {
         for (int x = 0; x < image->width; x++) {
@@ -111,9 +154,24 @@ void bmp24_readPixelData(t_bmp24 *image, FILE *file) {
     }
 }
 
+/**
+ * Écrit la valeur d'un pixel à une position spécifique
+ *
+ * @param image Pointeur vers l'image BMP 24 bits
+ * @param x Coordonnée x du pixel
+ * @param y Coordonnée y du pixel
+ * @param file Fichier BMP ouvert
+ */
 void bmp24_writePixelValue(t_bmp24 *image, int x, int y, FILE *file) {
     fwrite(&image->data[y][x], sizeof(t_pixel), 1, file);
 }
+
+/**
+ * Écrit toutes les données de pixels d'une image BMP 24 bits
+ *
+ * @param image Pointeur vers l'image BMP 24 bits
+ * @param file Fichier BMP ouvert
+ */
 void bmp24_writePixelData(t_bmp24 *image, FILE *file) {
     for (int y = image->height - 1; y >= 0; y--) {
         for (int x = 0; x < image->width; x++) {
@@ -122,6 +180,12 @@ void bmp24_writePixelData(t_bmp24 *image, FILE *file) {
     }
 }
 
+/**
+ * Charge une image BMP 24 bits à partir d'un fichier
+ *
+ * @param filename Nom du fichier à charger
+ * @return t_bmp24*: Pointeur vers l'image chargée ou NULL en cas d'erreur
+ */
 t_bmp24 *bmp24_loadImage(const char *filename) {
     char path[512];
     strcpy(path, "../images/");
@@ -186,6 +250,12 @@ t_bmp24 *bmp24_loadImage(const char *filename) {
     return image;
 }
 
+/**
+ * Sauvegarde une image BMP 24 bits dans un fichier
+ *
+ * @param img Pointeur vers l'image à sauvegarder
+ * @param filename Nom du fichier de destination
+ */
 void bmp24_saveImage(t_bmp24 *img, const char *filename) {
     char path[512];
     strcpy(path, "../images/");
@@ -214,6 +284,11 @@ void bmp24_saveImage(t_bmp24 *img, const char *filename) {
     fclose(file);
 }
 
+/**
+ * Affiche les informations d'une image BMP 24 bits
+ *
+ * @param img Pointeur vers l'image dont on veut afficher les informations
+ */
 void bmp24_printInfo(t_bmp24 *img) {
     if (img == NULL) {
         printf("⚠️ Image non valide ou non chargée\n");
@@ -236,6 +311,11 @@ void bmp24_printInfo(t_bmp24 *img) {
     }
 }
 
+/**
+ * Applique un effet négatif à une image BMP 24 bits
+ *
+ * @param img Pointeur vers l'image à modifier
+ */
 void bmp24_negative(t_bmp24 *img) {
     for (int y = 0; y < img->height; y++) {
         for (int x = 0; x < img->width; x++) {
@@ -245,6 +325,12 @@ void bmp24_negative(t_bmp24 *img) {
         }
     }
 }
+
+/**
+ * Convertit une image BMP 24 bits en niveaux de gris
+ *
+ * @param img Pointeur vers l'image à modifier
+ */
 void bmp24_grayscale(t_bmp24 *img) {
     for (int y = 0; y < img->height; y++) {
         for (int x = 0; x < img->width; x++) {
@@ -258,6 +344,13 @@ void bmp24_grayscale(t_bmp24 *img) {
         }
     }
 }
+
+/**
+ * Modifie la luminosité d'une image BMP 24 bits
+ *
+ * @param img Pointeur vers l'image à modifier
+ * @param value Valeur de luminosité à ajouter (-255 à 255)
+ */
 void bmp24_brightness(t_bmp24 *img, int value) {
     for (int y = 0; y < img->height; y++) {
         for (int x = 0; x < img->width; x++) {
@@ -291,6 +384,16 @@ void bmp24_brightness(t_bmp24 *img, int value) {
     }
 }
 
+/**
+ * Applique un noyau de convolution à un pixel d'une image BMP 24 bits
+ *
+ * @param img Pointeur vers l'image source
+ * @param x Coordonnée x du pixel
+ * @param y Coordonnée y du pixel
+ * @param kernel Noyau de convolution à appliquer
+ * @param kernelSize Taille du noyau (doit être impair)
+ * @return t_pixel: Nouvelle valeur du pixel après convolution
+ */
 t_pixel bmp24_convolution(t_bmp24 *img, int x, int y, float **kernel, int kernelSize) {
     // Calculer la moitié de la taille du noyau
     int n = kernelSize / 2;
@@ -331,6 +434,11 @@ t_pixel bmp24_convolution(t_bmp24 *img, int x, int y, float **kernel, int kernel
     return result;
 }
 
+/**
+ * Applique un flou rectangulaire à une image BMP 24 bits
+ *
+ * @param img Pointeur vers l'image à modifier
+ */
 void bmp24_boxBlur(t_bmp24 *img) {
     // Noyau de flou uniforme 3x3
     int kernelSize = 3;
@@ -371,6 +479,12 @@ void bmp24_boxBlur(t_bmp24 *img) {
     }
     free(kernel);
 }
+
+/**
+ * Applique un flou gaussien à une image BMP 24 bits
+ *
+ * @param img Pointeur vers l'image à modifier
+ */
 void bmp24_gaussianBlur(t_bmp24 *img) {
     // Noyau gaussien 5x5
     int kernelSize = 5;
@@ -379,6 +493,7 @@ void bmp24_gaussianBlur(t_bmp24 *img) {
         kernel[i] = malloc(kernelSize * sizeof(float));
     }
 
+    // Coefficients du noyau gaussien 5x5
     kernel[0][0] = 1/256.0f; kernel[0][1] = 4/256.0f;  kernel[0][2] = 6/256.0f;  kernel[0][3] = 4/256.0f;  kernel[0][4] = 1/256.0f;
     kernel[1][0] = 4/256.0f; kernel[1][1] = 16/256.0f; kernel[1][2] = 24/256.0f; kernel[1][3] = 16/256.0f; kernel[1][4] = 4/256.0f;
     kernel[2][0] = 6/256.0f; kernel[2][1] = 24/256.0f; kernel[2][2] = 36/256.0f; kernel[2][3] = 24/256.0f; kernel[2][4] = 6/256.0f;
@@ -414,6 +529,12 @@ void bmp24_gaussianBlur(t_bmp24 *img) {
     }
     free(kernel);
 }
+
+/**
+ * Détecte les contours d'une image BMP 24 bits
+ *
+ * @param img Pointeur vers l'image à modifier
+ */
 void bmp24_outline(t_bmp24 *img) {
     // Noyau de détection de contours (Laplacien)
     int kernelSize = 3;
@@ -422,6 +543,7 @@ void bmp24_outline(t_bmp24 *img) {
         kernel[i] = malloc(kernelSize * sizeof(float));
     }
 
+    // Coefficients du noyau de détection de contours
     kernel[0][0] = -1.0f; kernel[0][1] = -1.0f; kernel[0][2] = -1.0f;
     kernel[1][0] = -1.0f; kernel[1][1] = 8.0f;  kernel[1][2] = -1.0f;
     kernel[2][0] = -1.0f; kernel[2][1] = -1.0f; kernel[2][2] = -1.0f;
@@ -455,6 +577,12 @@ void bmp24_outline(t_bmp24 *img) {
     }
     free(kernel);
 }
+
+/**
+ * Applique un effet de relief à une image BMP 24 bits
+ *
+ * @param img Pointeur vers l'image à modifier
+ */
 void bmp24_emboss(t_bmp24 *img) {
     // Noyau de relief
     int kernelSize = 3;
@@ -463,6 +591,7 @@ void bmp24_emboss(t_bmp24 *img) {
         kernel[i] = malloc(kernelSize * sizeof(float));
     }
 
+    // Coefficients du noyau de relief
     kernel[0][0] = -2.0f; kernel[0][1] = -1.0f; kernel[0][2] = 0.0f;
     kernel[1][0] = -1.0f; kernel[1][1] = 1.0f;  kernel[1][2] = 1.0f;
     kernel[2][0] = 0.0f;  kernel[2][1] = 1.0f;  kernel[2][2] = 2.0f;
@@ -496,6 +625,12 @@ void bmp24_emboss(t_bmp24 *img) {
     }
     free(kernel);
 }
+
+/**
+ * Améliore la netteté d'une image BMP 24 bits
+ *
+ * @param img Pointeur vers l'image à modifier
+ */
 void bmp24_sharpen(t_bmp24 *img) {
     // Noyau de netteté
     int kernelSize = 3;
@@ -504,6 +639,7 @@ void bmp24_sharpen(t_bmp24 *img) {
         kernel[i] = malloc(kernelSize * sizeof(float));
     }
 
+    // Coefficients du noyau d'amélioration de la netteté
     kernel[0][0] = 0.0f;  kernel[0][1] = -1.0f; kernel[0][2] = 0.0f;
     kernel[1][0] = -1.0f; kernel[1][1] = 5.0f;  kernel[1][2] = -1.0f;
     kernel[2][0] = 0.0f;  kernel[2][1] = -1.0f; kernel[2][2] = 0.0f;

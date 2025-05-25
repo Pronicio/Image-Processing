@@ -64,32 +64,166 @@ typedef struct {
     t_pixel **data;
 } t_bmp24;
 
+/**
+ * Alloue de la mémoire pour les pixels d'une image BMP 24 bits
+ *
+ * @param width Largeur de l'image en pixels
+ * @param height Hauteur de l'image en pixels
+ * @return t_pixel**: Tableau bidimensionnel de pixels ou NULL en cas d'erreur
+ */
 t_pixel **bmp24_allocateDataPixels(int width, int height);
+
+/**
+ * Libère la mémoire allouée pour les pixels d'une image BMP 24 bits
+ *
+ * @param pixels Tableau de pixels à libérer
+ * @param height Hauteur de l'image en pixels
+ */
 void bmp24_freeDataPixels(t_pixel **pixels, int height);
 
+/**
+ * Alloue de la mémoire pour une structure d'image BMP 24 bits
+ *
+ * @param width Largeur de l'image en pixels
+ * @param height Hauteur de l'image en pixels
+ * @param colorDepth Profondeur de couleur en bits (devrait être 24)
+ * @return t_bmp24*: Pointeur vers l'image créée ou NULL en cas d'erreur
+ */
 t_bmp24 *bmp24_allocate(int width, int height, int colorDepth);
+
+/**
+ * Libère la mémoire allouée pour une image BMP 24 bits
+ *
+ * @param img Pointeur vers l'image à libérer
+ */
 void bmp24_free(t_bmp24 *img);
 
+/**
+ * Lit la valeur d'un pixel à une position spécifique
+ *
+ * @param image Pointeur vers l'image BMP 24 bits
+ * @param x Coordonnée x du pixel
+ * @param y Coordonnée y du pixel
+ * @param file Fichier BMP ouvert
+ */
 void bmp24_readPixelValue(t_bmp24 *image, int x, int y, FILE *file);
+
+/**
+ * Lit toutes les données de pixels d'une image BMP 24 bits
+ *
+ * @param image Pointeur vers l'image BMP 24 bits
+ * @param file Fichier BMP ouvert
+ */
 void bmp24_readPixelData(t_bmp24 *image, FILE *file);
 
+/**
+ * Écrit la valeur d'un pixel à une position spécifique
+ *
+ * @param image Pointeur vers l'image BMP 24 bits
+ * @param x Coordonnée x du pixel
+ * @param y Coordonnée y du pixel
+ * @param file Fichier BMP ouvert
+ */
 void bmp24_writePixelValue(t_bmp24 *image, int x, int y, FILE *file);
+
+/**
+ * Écrit toutes les données de pixels d'une image BMP 24 bits
+ *
+ * @param image Pointeur vers l'image BMP 24 bits
+ * @param file Fichier BMP ouvert
+ */
 void bmp24_writePixelData(t_bmp24 *image, FILE *file);
 
+/**
+ * Charge une image BMP 24 bits à partir d'un fichier
+ *
+ * @param filename Nom du fichier à charger
+ * @return t_bmp24*: Pointeur vers l'image chargée ou NULL en cas d'erreur
+ */
 t_bmp24 * bmp24_loadImage(const char * filename);
+
+/**
+ * Sauvegarde une image BMP 24 bits dans un fichier
+ *
+ * @param img Pointeur vers l'image à sauvegarder
+ * @param filename Nom du fichier de destination
+ */
 void bmp24_saveImage(t_bmp24 * img, const char * filename);
+
+/**
+ * Affiche les informations d'une image BMP 24 bits
+ *
+ * @param img Pointeur vers l'image dont on veut afficher les informations
+ */
 void bmp24_printInfo(t_bmp24 *img);
 
+/**
+ * Applique un effet négatif à une image BMP 24 bits
+ *
+ * @param img Pointeur vers l'image à modifier
+ */
 void bmp24_negative(t_bmp24 * img);
+
+/**
+ * Convertit une image BMP 24 bits en niveaux de gris
+ *
+ * @param img Pointeur vers l'image à modifier
+ */
 void bmp24_grayscale(t_bmp24 * img);
+
+/**
+ * Modifie la luminosité d'une image BMP 24 bits
+ *
+ * @param img Pointeur vers l'image à modifier
+ * @param value Valeur de luminosité à ajouter (-255 à 255)
+ */
 void bmp24_brightness(t_bmp24 * img, int value);
 
+/**
+ * Applique un noyau de convolution à un pixel d'une image BMP 24 bits
+ *
+ * @param img Pointeur vers l'image source
+ * @param x Coordonnée x du pixel
+ * @param y Coordonnée y du pixel
+ * @param kernel Noyau de convolution à appliquer
+ * @param kernelSize Taille du noyau (doit être impair)
+ * @return t_pixel: Nouvelle valeur du pixel après convolution
+ */
 t_pixel bmp24_convolution(t_bmp24 *img, int x, int y, float **kernel, int kernelSize);
 
+/**
+ * Applique un flou rectangulaire à une image BMP 24 bits
+ *
+ * @param img Pointeur vers l'image à modifier
+ */
 void bmp24_boxBlur(t_bmp24 *img);
+
+/**
+ * Applique un flou gaussien à une image BMP 24 bits
+ *
+ * @param img Pointeur vers l'image à modifier
+ */
 void bmp24_gaussianBlur(t_bmp24 *img);
+
+/**
+ * Détecte les contours d'une image BMP 24 bits
+ *
+ * @param img Pointeur vers l'image à modifier
+ */
 void bmp24_outline(t_bmp24 *img);
+
+/**
+ * Applique un effet de relief à une image BMP 24 bits
+ *
+ * @param img Pointeur vers l'image à modifier
+ */
 void bmp24_emboss(t_bmp24 *img);
+
+/**
+ * Améliore la netteté d'une image BMP 24 bits
+ *
+ * @param img Pointeur vers l'image à modifier
+ */
 void bmp24_sharpen(t_bmp24 *img);
 
 #endif //COLOR_H
