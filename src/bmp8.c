@@ -1,4 +1,6 @@
 #include "bmp8.h"
+
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -17,7 +19,6 @@ t_bmp8 *bmp8_loadImage(const char *filename) {
     FILE *file = fopen(path, "rb"); // Ouverture en mode lecture binaire
 
     if (file == NULL) {
-        fprintf(stderr, "Fichier non trouvé\n");
         return NULL;
     }
 
@@ -151,10 +152,10 @@ void bmp8_printInfo(t_bmp8 *img) {
         return;
     }
 
-    printf("📐 Largeur : %u\n", img->width);
-    printf("📐 Hauteur : %u\n", img->height);
-    printf("🎨 Profondeur de couleur : %u\n", img->colorDepth);
-    printf("🖼️ Taille des données : %u\n", img->dataSize);
+    printf("Largeur : %u\n", img->width);
+    printf("Hauteur : %u\n", img->height);
+    printf("Profondeur de couleur : %u\n", img->colorDepth);
+    printf("Taille des données : %u\n", img->dataSize);
 }
 
 /**

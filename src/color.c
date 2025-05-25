@@ -295,19 +295,19 @@ void bmp24_printInfo(t_bmp24 *img) {
         return;
     }
 
-    printf("📏 Résolution: %d x %d pixels\n", img->width, img->height);
-    printf("🎨 Profondeur de couleur: %d bits\n", img->colorDepth);
-    printf("📊 Taille du fichier: %u octets\n", img->header.size);
-    printf("📍 Offset des données: %u octets\n", img->header.offset);
-    printf("🖼️ Taille des données image: %u octets\n", img->header_info.imagesize);
+    printf("Résolution: %d x %d pixels\n", img->width, img->height);
+    printf("Profondeur de couleur: %d bits\n", img->colorDepth);
+    printf("Taille du fichier: %u octets\n", img->header.size);
+    printf("Offset des données: %u octets\n", img->header.offset);
+    printf("🖼Taille des données image: %u octets\n", img->header_info.imagesize);
 
     // Informations supplémentaires sur l'en-tête
-    printf("🔄 Compression: %u\n", img->header_info.compression);
-    printf("📐 Résolution X: %d pixels/mètre\n", img->header_info.xresolution);
-    printf("📐 Résolution Y: %d pixels/mètre\n", img->header_info.yresolution);
+    printf("Compression: %u\n", img->header_info.compression);
+    printf("Résolution X: %d pixels/mètre\n", img->header_info.xresolution);
+    printf("Résolution Y: %d pixels/mètre\n", img->header_info.yresolution);
 
     if (img->header_info.ncolors > 0) {
-        printf("🎭 Nombre de couleurs: %u\n", img->header_info.ncolors);
+        printf("Nombre de couleurs: %u\n", img->header_info.ncolors);
     }
 }
 
